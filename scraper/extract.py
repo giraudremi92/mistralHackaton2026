@@ -81,7 +81,10 @@ Si le contenu mentionne un mois sans année, applique cette règle.
 Si plusieurs dates pour un même événement, crée une entrée par date."""
         year_filter = f"de la saison {season} ({sy1} et {sy2})"
     else:
-        date_rule = f"""Pour les dates : si le contenu mentionne un mois sans date précise (ex: "en mars"), utilise le 1er du mois comme date_start et le dernier jour du mois comme date_end. Si plusieurs dates sont mentionnées pour un même événement, crée une entrée par date."""
+        date_rule = f"""Pour les dates :
+- Si un événement se déroule sur plusieurs jours (ex: "ven. 11 - dim. 13 décembre"), crée UNE SEULE entrée avec date_start = premier jour et date_end = dernier jour. Ne crée PAS une entrée par jour.
+- Si plusieurs événements distincts ont des dates différentes, crée une entrée par événement.
+- Si le contenu mentionne un mois sans date précise (ex: "en mars"), utilise le 1er du mois comme date_start et le dernier jour du mois comme date_end."""
         year_filter = f"de {target_year}"
 
     prompt = f"""Tu es un extracteur de données structurées spécialisé en événements culturels.

@@ -83,12 +83,26 @@ def fetch_urls_linkup(urls: list[str], render_js: bool = False) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def fetch_urls(urls: list[str], render_js: bool = False) -> str:
-    """Fetch URLs — uses Linkup (with JS rendering) if available and render_js=True, else Tavily."""
-    if render_js and LINKUP_AVAILABLE and os.getenv("LINKUP_API_KEY"):
+def fetch_urls(urls: list[str], render_js: bool = False, provider: str = "auto") -> str:
+    """Fetch URLs with configurable provider.
+
+    provider:
+      "auto"   — Linkup with render_js if available, else Tavily (default)
+      "linkup" — force Linkup (render_js=True)
+      "tavily" — force Tavily
+    """
+    use_linkup = LINKUP_AVAILABLE and os.getenv("LINKUP_API_KEY")
+
+    if provider == "tavily":
+        return fetch_urls_tavily(urls)
+    elif provider == "linkup":
         print(f"  Using Linkup (render_js=True)...")
         return fetch_urls_linkup(urls, render_js=True)
-    return fetch_urls_tavily(urls)
+    else:  # auto
+        if render_js and use_linkup:
+            print(f"  Using Linkup (render_js=True)...")
+            return fetch_urls_linkup(urls, render_js=True)
+        return fetch_urls_tavily(urls)
 
 
 def get_raw_content(venue: dict) -> str:
@@ -127,12 +141,14 @@ def get_raw_content(venue: dict) -> str:
         except Exception as e:
             print(f"  Warning: search failed: {e}")
 
-    render_js = venue.get("render_js", False)
+    render_js = venue.get("render_js", True)
+    provider = venue.get("fetch_provider", "auto")  # "auto", "linkup", "tavily"
     urls = [_render(u) for u in venue.get("urls", [])]
     if urls:
-        print(f"  Fetching {len(urls)} URL(s){'  [JS rendering]' if render_js else ''}...")
+        label = f"[{provider}]" if provider != "auto" else ("[JS rendering]" if render_js else "")
+        print(f"  Fetching {len(urls)} URL(s) {label}...")
         try:
-            url_content = fetch_urls(urls, render_js=render_js)
+            url_content = fetch_urls(urls, render_js=render_js, provider=provider)
             if url_content:
                 parts.append(url_content)
         except Exception as e:

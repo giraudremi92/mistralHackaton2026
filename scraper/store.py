@@ -2,6 +2,7 @@
 
 import json
 import re
+import unicodedata
 from datetime import datetime, date
 from pathlib import Path
 
@@ -24,12 +25,19 @@ def prune_past_events(events: list[dict]) -> list[dict]:
     return kept
 
 
+def _normalize(text: str) -> str:
+    """Normalize text for deduplication: lowercase, remove accents, normalize punctuation."""
+    text = text.lower()
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn")  # strip accents
+    text = re.sub(r"[:\-–—]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def _event_key(event: dict) -> tuple:
     """Unique key for an event: (lieu_id, titre_normalized, date_start)."""
-    titre = event.get("titre", "").lower()
-    titre = re.sub(r"[:\-–—]", " ", titre)   # normalize punctuation
-    titre = re.sub(r"\s+", " ", titre).strip()
-    return (event.get("lieu_id", ""), titre, event.get("date_start", ""))
+    return (event.get("lieu_id", ""), _normalize(event.get("titre", "")), event.get("date_start", ""))
 
 
 def load_existing(filepath: str) -> list[dict]:

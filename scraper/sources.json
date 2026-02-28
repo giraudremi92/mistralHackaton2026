@@ -17,9 +17,9 @@
   {
     "lieu_id": "grimaldi_forum",
     "lieu_nom": "Grimaldi Forum Monaco",
+    "render_js": true,
     "search_queries": [
       "Grimaldi Forum Monaco programme concerts expositions 2026 dates",
-      "Grimaldi Forum Monaco spectacles agenda mars avril mai juin 2026 site:grimaldiforum.com OR site:visitmonaco.com OR site:monaco-tribune.com OR site:monacolife.net",
       "\"Grimaldi Forum\" Monaco 2026 concert exposition date heure billet tarif"
     ],
     "urls": [],
@@ -50,6 +50,7 @@
     "lieu_id": "mediatheque_monaco",
     "lieu_nom": "Médiathèque de Monaco",
     "render_js": true,
+    "fetch_provider": "linkup",
     "search_queries": [
       "Médiathèque Monaco agenda animations conférences ateliers mars avril {year} site:mediatheque.mc OR site:visitmonaco.com OR site:monaco-tribune.com"
     ],
@@ -65,6 +66,7 @@
     "lieu_nom": "Théâtre des Muses Monaco",
     "season": "2025-2026",
     "render_js": true,
+    "fetch_provider": "linkup",
     "search_queries": [
       "\"Théâtre des Muses\" Monaco {season_year2} spectacles programme adulte enfant dates"
     ],
