@@ -2,13 +2,33 @@
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
+
+
+def prune_past_events(events: list[dict]) -> list[dict]:
+    """Remove events that have completely passed (date_end or date_start < today)."""
+    today = date.today()
+    kept = []
+    for e in events:
+        end_raw = e.get("date_end") or e.get("date_start")
+        if not end_raw:
+            kept.append(e)
+            continue
+        try:
+            end = datetime.strptime(end_raw, "%Y-%m-%d").date()
+            if end >= today:
+                kept.append(e)
+        except ValueError:
+            kept.append(e)
+    return kept
 
 
 def _event_key(event: dict) -> tuple:
     """Unique key for an event: (lieu_id, titre_normalized, date_start)."""
-    titre = re.sub(r"\s+", " ", event.get("titre", "")).strip().lower()
+    titre = event.get("titre", "").lower()
+    titre = re.sub(r"[:\-–—]", " ", titre)   # normalize punctuation
+    titre = re.sub(r"\s+", " ", titre).strip()
     return (event.get("lieu_id", ""), titre, event.get("date_start", ""))
 
 
@@ -78,6 +98,17 @@ def upsert_events(venue: dict, new_events: list[dict]) -> dict:
         }
 
     merged, added, skipped = merge_events(existing, new_events)
+
+    # For seasonal venues: prune events that have already passed
+    if venue.get("season"):
+        before = len(merged)
+        merged = prune_past_events(merged)
+        pruned = before - len(merged)
+        if pruned:
+            print(f"  Pruned {pruned} past event(s)")
+    else:
+        pruned = 0
+
     save_events(filepath, merged)
     return {
         "file": filepath,
@@ -85,6 +116,7 @@ def upsert_events(venue: dict, new_events: list[dict]) -> dict:
         "extracted": len(new_events),
         "added": added,
         "skipped": skipped,
+        "pruned": pruned,
         "total": len(merged),
         "mode": "upsert",
     }

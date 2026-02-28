@@ -32,7 +32,7 @@
     "lieu_nom": "Cinémas de Monaco",
     "always_current": true,
     "current_duration_days": 45,
-    "md_context": "Ce lieu regroupe DEUX cinémas distincts : (1) Cinéma des Beaux-Arts : salle intérieure, ouvert toute l'année, situé au Théâtre Princesse Grace, 12 Avenue d'Ostende. (2) Monaco Open Air Cinema : plein air, ouvert en août et septembre UNIQUEMENT, situé Parking du Chemin des pêcheurs. Les horaires estivaux (août/septembre) concernent UNIQUEMENT l'Open Air Cinema et ne s'appliquent PAS au Cinéma des Beaux-Arts.",
+    "md_context": "Ce lieu regroupe DEUX cinémas distincts : (1) Cinéma des Beaux-Arts : salle intérieure, ouvert toute l'année, situé au Théâtre Princesse Grace, 12 Avenue d'Ostende. (2) Monaco Open Air Cinema : plein air, ouvert en août et septembre UNIQUEMENT, situé Parking du Chemin des pêcheurs. Les horaires estivaux (août/septembre) concernent UNIQUEMENT l'Open Air Cinema et ne s'appliquent PAS au Cinéma des Beaux-Arts. IMPORTANT : Les films listés sont à l'affiche cette semaine mais les séances varient selon le jour. Pour connaître les horaires exacts d'un jour précis, consulter : https://www.cinemas2monaco.com",
     "search_queries": [
       "cinémas Monaco programme films séances 2026 site:cinemas2monaco.com OR site:visitmonaco.com",
       "cinemas2monaco.com programme séances 2026",
@@ -45,5 +45,51 @@
     "events_file": "culture_data/events_cinema_monaco.json",
     "md_file": "culture_data/CINEMA_MONACO.md",
     "md_search_query": "Cinémas Monaco horaires tarifs salles informations pratiques"
+  },
+  {
+    "lieu_id": "mediatheque_monaco",
+    "lieu_nom": "Médiathèque de Monaco",
+    "render_js": true,
+    "search_queries": [
+      "Médiathèque Monaco agenda animations conférences ateliers mars avril {year} site:mediatheque.mc OR site:visitmonaco.com OR site:monaco-tribune.com"
+    ],
+    "urls": [
+      "https://www.mediatheque.mc/search.aspx?SC=CALENDAR_PLANNER_1#/Search/(query:(FacetFilter:%7B%7D,ForceSearch:!f,InitialSearch:!f,Page:0,PageRange:3,QueryGuid:'7ef2f7c8-161f-4109-8e2a-f0ed14aff5b1',QueryString:'*:*',ResultSize:'50',ScenarioCode:CALENDAR_PLANNER_1,ScenarioDisplayMode:display-standard,SearchGridFieldsShownOnResultsDTO:!(),SearchLabel:'',SearchTerms:'*:*',SortField:startDate_date,SortOrder:1,TemplateParams:(Scenario:'',Scope:Default,Size:!n,Source:'',Support:'',UseCompact:!f),UseSpellChecking:!n),sst:4)"
+    ],
+    "events_file": "culture_data/events_mediatheque_monaco.json",
+    "md_file": "culture_data/MEDIATHEQUE_MONACO.md",
+    "md_search_query": "Médiathèque Monaco horaires tarifs informations pratiques adresse accès"
+  },
+  {
+    "lieu_id": "theatre_muses",
+    "lieu_nom": "Théâtre des Muses Monaco",
+    "season": "2025-2026",
+    "render_js": true,
+    "search_queries": [
+      "\"Théâtre des Muses\" Monaco {season_year2} spectacles programme adulte enfant dates"
+    ],
+    "urls": [
+      "https://www.letheatredesmuses.com/programme-adulte/",
+      "https://www.letheatredesmuses.com/programme-enfants/"
+    ],
+    "events_file": "culture_data/events_theatre_muses.json",
+    "md_file": "culture_data/THEATRE_MUSES.md",
+    "md_search_query": "Théâtre des Muses Monaco horaires tarifs informations pratiques adresse accès"
+  },
+  {
+    "lieu_id": "theatre_princesse_grace",
+    "lieu_nom": "Théâtre Princesse Grace Monaco",
+    "season": "2025-2026",
+    "search_queries": [
+      "\"Théâtre Princesse Grace\" Monaco mars avril mai juin {season_year2} spectacles dates billets",
+      "site:tpgmonaco.mc {season_year2} spectacles programme"
+    ],
+    "urls": [
+      "https://www.tpgmonaco.mc/fr/2025-2026/programme",
+      "https://www.tpgmonaco.mc/"
+    ],
+    "events_file": "culture_data/events_theatre_princesse_grace.json",
+    "md_file": "culture_data/THEATRE_PRINCESSE_GRACE.md",
+    "md_search_query": "Théâtre Princesse Grace Monaco horaires tarifs informations pratiques adresse accès"
   }
 ]

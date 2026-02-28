@@ -3,3 +3,4 @@ gradio
 python-dotenv
 mistralai
 tavily-python
+linkup-sdk

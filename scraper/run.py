@@ -11,6 +11,7 @@ Usage:
 import argparse
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -31,7 +32,9 @@ def process_venue(venue: dict, dry_run: bool = False, debug: bool = False) -> No
 
     # 1. Fetch raw content
     print("\n[1/3] Fetching content...")
+    t0 = time.time()
     raw_content = fetch.get_raw_content(venue)
+    print(f"  Done in {time.time() - t0:.1f}s")
     if not raw_content.strip():
         print("  No content retrieved. Skipping.")
         return
@@ -43,7 +46,9 @@ def process_venue(venue: dict, dry_run: bool = False, debug: bool = False) -> No
 
     # 2. Extract structured events via Mistral
     print("\n[2/3] Extracting events with Mistral...")
+    t0 = time.time()
     new_events = extract.extract_events(raw_content, venue)
+    print(f"  Done in {time.time() - t0:.1f}s")
     if not new_events:
         print("  No events extracted.")
     else:
