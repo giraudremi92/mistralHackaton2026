@@ -1,0 +1,49 @@
+[
+  {
+    "lieu_id": "musee_oceano",
+    "lieu_nom": "Musée Océanographique de Monaco",
+    "search_queries": [
+      "expositions événements culturels agenda 2026 Musée Océanographique Monaco",
+      "Musée Océanographique Monaco ateliers visites guidées nocturnes 2026"
+    ],
+    "urls": [
+      "https://www.oceano.mc/fr/agenda",
+      "https://www.oceano.mc/fr/expositions"
+    ],
+    "events_file": "culture_data/events_musee_oceano.json",
+    "md_file": "culture_data/MUSEE_OCEANO.md",
+    "md_search_query": "Musée Océanographique Monaco horaires tarifs informations pratiques"
+  },
+  {
+    "lieu_id": "grimaldi_forum",
+    "lieu_nom": "Grimaldi Forum Monaco",
+    "search_queries": [
+      "Grimaldi Forum Monaco programme concerts expositions 2026 dates",
+      "Grimaldi Forum Monaco spectacles agenda mars avril mai juin 2026 site:grimaldiforum.com OR site:visitmonaco.com OR site:monaco-tribune.com OR site:monacolife.net",
+      "\"Grimaldi Forum\" Monaco 2026 concert exposition date heure billet tarif"
+    ],
+    "urls": [],
+    "events_file": "culture_data/events_grimaldi_forum.json",
+    "md_file": "culture_data/GRIMALDI_FORUM.md",
+    "md_search_query": "Grimaldi Forum Monaco horaires tarifs informations pratiques accès"
+  },
+  {
+    "lieu_id": "cinema_monaco",
+    "lieu_nom": "Cinémas de Monaco",
+    "always_current": true,
+    "current_duration_days": 45,
+    "md_context": "Ce lieu regroupe DEUX cinémas distincts : (1) Cinéma des Beaux-Arts : salle intérieure, ouvert toute l'année, situé au Théâtre Princesse Grace, 12 Avenue d'Ostende. (2) Monaco Open Air Cinema : plein air, ouvert en août et septembre UNIQUEMENT, situé Parking du Chemin des pêcheurs. Les horaires estivaux (août/septembre) concernent UNIQUEMENT l'Open Air Cinema et ne s'appliquent PAS au Cinéma des Beaux-Arts.",
+    "search_queries": [
+      "cinémas Monaco programme films séances 2026 site:cinemas2monaco.com OR site:visitmonaco.com",
+      "cinemas2monaco.com programme séances 2026",
+      "allocine Cinéma des Beaux-Arts Monaco séances horaires semaine site:allocine.fr"
+    ],
+    "urls": [
+      "https://www.cinemas2monaco.com/index.php?page=2",
+      "https://www.cinemas2monaco.com"
+    ],
+    "events_file": "culture_data/events_cinema_monaco.json",
+    "md_file": "culture_data/CINEMA_MONACO.md",
+    "md_search_query": "Cinémas Monaco horaires tarifs salles informations pratiques"
+  }
+]
