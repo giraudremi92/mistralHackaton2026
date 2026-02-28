@@ -12,6 +12,7 @@ from typing import Optional
 from agent import respond
 from agent.elevenlabs_tts import list_voices, speak
 from agent.voxtral import transcribe
+from agent import get_last_scraped_at
 
 app = FastAPI()
 
@@ -36,13 +37,15 @@ async def root():
 @app.post("/chat")
 async def chat(body: ChatRequest):
     try:
-        response = respond(
+        out = respond(
             body.message,
             body.history,
             provider=body.provider,
             model=body.model,
         )
-        return {"response": response or ""}
+        if isinstance(out, dict):
+            return out
+        return {"response": out or ""}
     except Exception as e:
         return {"response": f"Désolé, une erreur s'est produite : {e}"}
 
@@ -83,6 +86,11 @@ async def voices():
         return list_voices()
     except Exception:
         return []
+
+
+@app.get("/last-scraped")
+async def last_scraped():
+    return {"last_scraped_at": get_last_scraped_at()}
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

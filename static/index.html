@@ -49,7 +49,8 @@ body { z-index:1; }
 .logo em { color:var(--accent-red); font-style:normal; }
 .sep { width:1px; height:18px; background:var(--border); }
 .tagline { font-size:10px; color:var(--text-secondary); letter-spacing:2.5px; text-transform:uppercase; font-weight:300; }
-.badge { margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--accent-gold); border:1px solid rgba(201,168,76,0.35); padding:3px 10px; letter-spacing:2px; text-transform:uppercase; }
+.header-right { display:flex; align-items:center; gap:12px; margin-left:auto; }
+.badge { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--accent-gold); border:1px solid rgba(201,168,76,0.35); padding:3px 10px; letter-spacing:2px; text-transform:uppercase; }
 #app { display:flex; height:calc(100vh - 58px); overflow:hidden; }
 #chat-area { flex:1; display:flex; flex-direction:column; border-right:1px solid var(--border); overflow:hidden; }
 #messages { flex:1; overflow-y:auto; padding:28px 32px; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth; }
@@ -66,8 +67,15 @@ body { z-index:1; }
 .msg.agent { align-self:flex-start; background:var(--bg-tertiary); border:1px solid var(--border); border-right:3px solid var(--accent-gold); box-shadow:2px 2px 16px rgba(232, 217, 0, 0.06); max-width:78%; }
 .msg.agent ul { padding-left:18px; margin-top:6px; }
 .msg.agent li { margin-bottom:6px; color:#ccc; }
-.event-title { color:var(--accent-gold-l); font-weight:500; }
-.event-meta { color:var(--text-secondary); font-size:12px; margin-top:2px; }
+.agent-intro { color:var(--text-primary); font-weight:500; margin-bottom:12px; }
+.event-list { list-style:none; padding-left:0; margin:0; }
+.event-item { margin-bottom:14px; padding-left:0; color:var(--text-secondary); font-size:13px; }
+.event-item::before { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-secondary); margin-right:10px; vertical-align:middle; }
+.event-title { color:var(--accent-gold-l); font-weight:500; display:inline; margin-bottom:0; }
+.event-meta { color:var(--text-secondary); font-size:12px; margin-top:2px; margin-bottom:4px; }
+.agent-body.event-meta { margin-top:8px; }
+.event-link { color:var(--accent-red); text-decoration:none; font-size:12px; display:inline-block; margin-top:2px; }
+.event-link:hover { text-decoration:underline; }
 .msg.agent a { color:var(--accent-red); text-decoration:none; font-size:12px; }
 .msg.agent a:hover { text-decoration:underline; }
 .msg-audio { display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
@@ -127,7 +135,10 @@ body { z-index:1; }
   <div class="logo">🏎 <em>Monaco</em> Cultural Agent</div>
   <div class="sep"></div>
   <div class="tagline">Principauté de Monaco</div>
-  <div class="badge">Mistral Hackathon 2026</div>
+  <div class="header-right">
+    <div class="tagline" id="last-scraped-line">Dernière mise à jour : …</div>
+    <div class="badge">Mistral Hackathon 2026</div>
+  </div>
 </div>
 <div id="app">
   <div id="chat-area">
@@ -167,7 +178,7 @@ body { z-index:1; }
     <div class="s-divider"></div>
     <div class="s-about">
       <span class="s-about-title">// À PROPOS</span>
-      Agent spécialisé événements culturels de la Principauté de Monaco.<br><br>
+      Agent spécialisé événements culturels de la Principauté de Monaco. Domaine d'expertise : événements culturels, expositions, spectacles, théâtre, cinéma, musée, opéra, jardin exotique, etc.<br><br>
       <span style="color:#333;font-size:10px;font-family:'JetBrains Mono',monospace">Sources :</span><br>
       <span class="s-source">culture.mc</span><br>
       <span class="s-source">mairie.mc</span><br>
@@ -217,6 +228,19 @@ body { z-index:1; }
     return div.innerHTML;
   }
 
+  function stripUrlsForTTS(txt) {
+    if (!txt || !txt.trim()) return "";
+    return txt.replace(/\s*https?:\/\/[^\s]+\s*/gi, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function getDomainFromUrl(url) {
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      return a.hostname.replace(/^www\./, "") || url;
+    } catch (err) { return url; }
+  }
+
   function renderMarkup(txt) {
     if (!txt) return "";
     return escapeHtml(txt)
@@ -226,7 +250,116 @@ body { z-index:1; }
       .replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
   }
 
-  function appendMessage(role, content, isVocal) {
+  function formatIntroHtml(intro) {
+    if (!intro || !intro.trim()) return "";
+    var escaped = escapeHtml(intro);
+    escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<span class="event-title">$1</span>');
+    escaped = escaped.replace(/\[([^\]]*)\]\((https?:\S+)\)/g, function(_, __, url) {
+      var domain = getDomainFromUrl(url);
+      return '<a class="event-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + escapeHtml(domain) + " →</a>";
+    });
+    return escaped;
+  }
+
+  function formatItemHtml(line) {
+    var escaped = escapeHtml(line);
+    escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<span class="event-title">$1</span>');
+    escaped = escaped.replace(/\[([^\]]*)\]\((https?:\S+)\)/g, function(_, __, url) {
+      var domain = getDomainFromUrl(url);
+      return '<a class="event-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + escapeHtml(domain) + " →</a>";
+    });
+    return escaped;
+  }
+
+  function parseEventLine(line) {
+    line = line.replace(/\s+/g, " ").trim();
+    var title = "", date = "", lieu = "", tarif = "", url = "";
+    var lieuM = line.match(/\bLieu\s*:\s*([^.]*?)(?=\.\s*(?:Tarif|Lien|Horaires)|\.\s*$|$)/i);
+    var tarifM = line.match(/\bTarif\s*:\s*([^.]*?)(?=\.\s*Lien|\.\s*$|$)/i);
+    if (!tarifM && /Gratuit/i.test(line)) tarifM = [null, (line.match(/Gratuit[^.]*\.?/) || [])[0] || "Gratuit"];
+    var lienM = line.match(/\bLien\s*:\s*(\S+)/i);
+    var duM = line.match(/Du\s+(.+?)\s+au\s+([^.]*?)(?=\.|$)/i);
+    if (lieuM) lieu = lieuM[1].trim();
+    if (tarifM) tarif = tarifM[1].trim();
+    if (lienM) {
+      var u = lienM[1].trim();
+      var mdLink = u.match(/\[[^\]]*\]\s*\((https?:\S+)\)/);
+      if (mdLink) url = mdLink[1];
+      else if (u.indexOf("http") === 0) url = u;
+      else url = "https://" + u.replace(/^\[|\]$/g, "");
+    }
+    if (duM) date = (duM[1].trim() + " – " + duM[2].trim()).replace(/\s*\.\s*$/, "");
+    var beforeLieu = lieuM ? line.substring(0, line.indexOf(lieuM[0])).trim() : line;
+    title = beforeLieu.split(". ")[0].trim();
+    if (duM && title.length > beforeLieu.indexOf("Du ") && beforeLieu.indexOf("Du ") >= 0) {
+      var avantDu = beforeLieu.substring(0, beforeLieu.indexOf("Du ")).trim();
+      if (avantDu) title = avantDu.replace(/\s*\.\s*$/, "");
+    }
+    if (!title) title = beforeLieu.split(". ")[0] || beforeLieu;
+    return { title: title, date: date, lieu: lieu, tarif: tarif || "Prix non communiqué", url: url };
+  }
+
+  function looksLikeEventList(intro, firstItem) {
+    if (!firstItem || !intro) return false;
+    var lower = (intro + " " + firstItem).toLowerCase();
+    if (lower.indexOf("lieu") >= 0 || lower.indexOf("du ") >= 0) return true;
+    if (/^\d+\.\s*.{10,}/.test(firstItem) && (firstItem.indexOf("Lieu") >= 0 || firstItem.indexOf("Tarif") >= 0)) return true;
+    return false;
+  }
+
+  function eventEmojiFromIntro(intro) {
+    var i = (intro || "").toLowerCase();
+    if (i.indexOf("concert") >= 0) return "🎵";
+    if (i.indexOf("exposition") >= 0 || i.indexOf("expo") >= 0) return "🖼️";
+    if (i.indexOf("humour") >= 0) return "🎤";
+    if (i.indexOf("atelier") >= 0) return "📚";
+    if (i.indexOf("théâtre") >= 0 || i.indexOf("spectacle") >= 0) return "🎭";
+    return "🖼️";
+  }
+
+  function renderAgentResponse(txt) {
+    if (!txt || !txt.trim()) return "";
+    var parts = txt.trim().split(/\n\n+/);
+    var intro = parts[0] || "";
+    var body = parts.slice(1).join("\n\n").trim();
+    var introHtml = "<p class=\"agent-intro\">" + formatIntroHtml(intro) + "</p>";
+    if (!body.trim()) return introHtml;
+    var items = body.split(/(?=^\d+\.\s)/m).filter(function(s) { return /^\d+\.\s/.test(s.trim()); });
+    var listHtml = "";
+    if (items.length > 0) {
+      var firstLine = items[0].replace(/^\d+\.\s*/, "").trim();
+      if (looksLikeEventList(intro, firstLine)) {
+        var emoji = eventEmojiFromIntro(intro);
+        listHtml = '<ul class="event-list">';
+        items.forEach(function(it) {
+          var line = it.replace(/^\d+\.\s*/, "").trim();
+          var p = parseEventLine(line);
+          if (!p.title) p.title = line.split(". ")[0] || line;
+          listHtml += '<li class="event-item">';
+          listHtml += '<span class="event-title">' + emoji + " " + escapeHtml(p.title) + "</span>";
+          listHtml += '<div class="event-meta">';
+          listHtml += (p.date ? "📅 " + escapeHtml(p.date) + " . " : "") + "📍 " + escapeHtml(p.lieu);
+          if (p.tarif && p.tarif !== "Prix non communiqué") listHtml += " . 🎟️ " + escapeHtml(p.tarif);
+          listHtml += "</div>";
+          if (p.url) listHtml += '<a class="event-link" href="' + escapeHtml(p.url) + '" target="_blank" rel="noopener">' + escapeHtml(getDomainFromUrl(p.url)) + " →</a>";
+          listHtml += "</li>";
+        });
+        listHtml += "</ul>";
+      } else {
+        listHtml = '<ul class="event-list">';
+        items.forEach(function(it) {
+          var line = it.replace(/^\d+\.\s*/, "").trim();
+          listHtml += '<li class="event-item">' + formatItemHtml(line).replace(/\n/g, "<br>") + "</li>";
+        });
+        listHtml += "</ul>";
+      }
+    } else {
+      listHtml = '<div class="agent-body event-meta">' + formatItemHtml(body).replace(/\n/g, "<br>") + "</div>";
+    }
+    return introHtml + listHtml;
+  }
+
+  function appendMessage(role, content, isVocal, events) {
     const wrap = document.createElement("div");
     wrap.className = "msg-wrap";
     const isUser = role === "user";
@@ -235,12 +368,94 @@ body { z-index:1; }
     label.textContent = isUser ? (isVocal ? "VOUS · 🎙 VOCAL" : "VOUS") : "AGENT";
     const msg = document.createElement("div");
     msg.className = "msg " + (isUser ? "user" : "agent");
-    msg.innerHTML = renderMarkup(content);
+    if (!isUser && events && events.length > 0) {
+      var intro = (content || "").split("\n\n")[0] || "";
+      msg.innerHTML = renderEventsBlock(intro, events);
+    } else if (!isUser && content) {
+      msg.innerHTML = renderAgentResponse(content);
+    } else {
+      msg.innerHTML = renderMarkup(content);
+    }
     wrap.appendChild(label);
     wrap.appendChild(msg);
     messagesEl.appendChild(wrap);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return wrap;
+  }
+
+  function eventKindFromTags(tags) {
+    var t = (tags || []).map(function(x) { return (x || "").toLowerCase(); });
+    if (t.some(function(x) { return x.indexOf("concert") >= 0 || x.indexOf("musique") >= 0; })) return "concert";
+    if (t.some(function(x) { return x.indexOf("film") >= 0 || x.indexOf("cinéma") >= 0 || x.indexOf("cinema") >= 0 || x.indexOf("projection") >= 0; })) return "film";
+    if (t.some(function(x) { return x.indexOf("expo") >= 0 || x.indexOf("exposition") >= 0; })) return "exposition";
+    if (t.some(function(x) { return x.indexOf("humour") >= 0; })) return "humour";
+    if (t.some(function(x) { return x.indexOf("atelier") >= 0; })) return "atelier";
+    if (t.some(function(x) { return x.indexOf("théâtre") >= 0 || x.indexOf("theatre") >= 0 || x.indexOf("spectacle") >= 0; })) return "theatre";
+    return "default";
+  }
+
+  var MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  function formatDateShort(startStr, endStr) {
+    if (!startStr) return "";
+    var d = startStr.split("-");
+    var j = d[2] ? parseInt(d[2], 10) : "";
+    var m = d[1] ? MOIS[parseInt(d[1], 10) - 1] : "";
+    if (!endStr || endStr === startStr) return (j && m) ? j + " " + m : startStr;
+    var e = endStr.split("-");
+    var j2 = e[2] ? parseInt(e[2], 10) : "";
+    var m2 = e[1] ? MOIS[parseInt(e[1], 10) - 1] : "";
+    if (m2 === m) return (j && j2 && m) ? j + "-" + j2 + " " + m : startStr + "–" + endStr;
+    return (j && m && j2 && m2) ? j + " " + m + " – " + j2 + " " + m2 : startStr + "–" + endStr;
+  }
+
+  function renderEventsBlock(intro, events) {
+    var html = "";
+    if (intro) html += '<p class="agent-intro">' + escapeHtml(intro.trim()) + "</p>";
+    html += '<ul class="event-list">';
+    events.forEach(function(e) {
+      var titre = e.titre || "";
+      var lieu = e.lieu_nom || "";
+      var start = e.date_start || "";
+      var end = e.date_end || e.date_start || "";
+      var heure = e.heure_debut || "";
+      var description = (e.description || "").trim();
+      var kind = eventKindFromTags(e.tags);
+      var tarif = e.tarif ? (e.tarif + "").trim() : "";
+      if (!tarif && e.gratuit) tarif = "Entrée libre";
+      if (!tarif) tarif = "Prix non communiqué";
+      var linkUrl = (e.url != null && e.url !== "") ? String(e.url).trim() : "";
+      var domain = linkUrl ? getDomainFromUrl(linkUrl) : "";
+      var emoji = "🎭";
+      if (kind === "concert") emoji = "🎵";
+      else if (kind === "film") emoji = "🎬";
+      else if (kind === "exposition") emoji = "🖼️";
+      else if (kind === "humour") emoji = "🎤";
+      else if (kind === "atelier") emoji = "📚";
+      else if (kind === "theatre") emoji = "🎭";
+      var metaHtml = "";
+      if (kind === "film") {
+        var metaParts = [];
+        if (heure || (description && (description.indexOf("h") >= 0 || description.indexOf(":") >= 0))) {
+          if (description && description.length < 80) metaParts.push("🕐 " + escapeHtml(description));
+          else if (heure) metaParts.push("🕐 À partir de " + escapeHtml(heure));
+        }
+        metaParts.push("🗓️ " + escapeHtml(start + (end && end !== start ? "–" + end : "")));
+        metaParts.push("📍 " + escapeHtml(lieu));
+        if (tarif !== "Prix non communiqué") metaParts.push("💰 " + escapeHtml(tarif));
+        metaHtml = metaParts.join(" • ");
+      } else {
+        var dateLabel = formatDateShort(start, end);
+        metaHtml = "📅 " + escapeHtml(dateLabel) + " . 📍 " + escapeHtml(lieu);
+        if (tarif !== "Prix non communiqué") metaHtml += " . 🎟️ " + escapeHtml(tarif);
+      }
+      html += '<li class="event-item">';
+      html += '<span class="event-title">' + emoji + " " + escapeHtml(titre) + "</span>";
+      html += '<div class="event-meta">' + metaHtml + "</div>";
+      if (linkUrl && domain) html += '<a class="event-link" href="' + escapeHtml(linkUrl) + '" target="_blank" rel="noopener">' + escapeHtml(domain) + " →</a>";
+      html += "</li>";
+    });
+    html += "</ul>";
+    return html;
   }
 
   function formatTime(sec) {
@@ -426,11 +641,13 @@ body { z-index:1; }
       .then(function(data) {
         removeTyping(typingWrap);
         var response = (data && data.response) || "";
+        var events = data && data.events && Array.isArray(data.events) ? data.events : null;
         state.history.push({ role: "assistant", content: response });
-        var agentWrap = appendMessage("assistant", response, false);
-        addAudioPlayer(agentWrap, response);
+        var agentWrap = appendMessage("assistant", response, false, events);
+        var ttsText = (data && data.tts_text && (data.tts_text + "").trim()) ? (data.tts_text + "").trim() : stripUrlsForTTS(response);
+        addAudioPlayer(agentWrap, ttsText);
         if (state.speakerAuto || isVocal) {
-          playTTSForMessage(agentWrap, response);
+          playTTSForMessage(agentWrap, ttsText);
         }
       })
       .catch(function() {
@@ -573,10 +790,12 @@ body { z-index:1; }
                 .then(function(chatData) {
                   removeTyping(typingWrap);
                   var response = (chatData && chatData.response) || "";
+                  var events = chatData && chatData.events && Array.isArray(chatData.events) ? chatData.events : null;
                   state.history.push({ role: "assistant", content: response });
-                  var agentWrap = appendMessage("assistant", response, false);
-                  addAudioPlayer(agentWrap, response);
-                  playTTSForMessage(agentWrap, response);
+                  var agentWrap = appendMessage("assistant", response, false, events);
+                  var ttsText = (chatData && chatData.tts_text && (chatData.tts_text + "").trim()) ? (chatData.tts_text + "").trim() : stripUrlsForTTS(response);
+                  addAudioPlayer(agentWrap, ttsText);
+                  playTTSForMessage(agentWrap, ttsText);
                 })
                 .catch(function() {
                   removeTyping(typingWrap);
@@ -599,6 +818,10 @@ body { z-index:1; }
   populateProviders();
   populateModels();
   populateVoices();
+  fetch("/last-scraped").then(function(r) { return r.json(); }).then(function(d) {
+    var el = document.getElementById("last-scraped-line");
+    if (el && d && d.last_scraped_at) el.textContent = "Dernière mise à jour : " + d.last_scraped_at;
+  }).catch(function() {});
 })();
 </script>
 </body>
