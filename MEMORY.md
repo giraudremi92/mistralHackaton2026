@@ -16,4 +16,4 @@ Cultural venue and event files are stored in the `culture_data/` folder at the p
 - `culture_data/events_grimaldi_forum.json` — Events at the Grimaldi Forum
 
 ### JSON event schema
-Each event object contains: `id`, `lieu_id`, `lieu_nom`, `titre`, `description`, `date_start`, `date_end`, `heure_debut`, `heure_fin`, `tags`, `tarif`, `tarif_value`, `gratuit`, `url`, `image_url`, `source`, `scraped_at`.
+Each event object contains: `id`, `venue_id`, `venue_name`, `titre`, `description`, `date_start`, `date_end`, `heure_debut`, `heure_fin`, `tags`, `tarif`, `tarif_value`, `gratuit`, `url`, `image_url`, `source`, `scraped_at`.

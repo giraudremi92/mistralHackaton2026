@@ -141,7 +141,7 @@ def load_events(date_range: tuple[date, date] | None) -> str:
 
     lines = ["## Événements disponibles\n"]
     for e in filtered:
-        lines.append(f"### {e['titre']} ({e['lieu_nom']})")
+        lines.append(f"### {e['titre']} ({e['venue_name']})")
         if e.get("always_current"):
             lines.append(f"- Disponibilité : À l'affiche en ce moment")
         else:

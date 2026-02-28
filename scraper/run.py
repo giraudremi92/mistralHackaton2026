@@ -27,7 +27,7 @@ from scraper import fetch, extract, store
 
 def process_venue(venue: dict, dry_run: bool = False, debug: bool = False) -> None:
     print(f"\n{'='*60}")
-    print(f"Venue : {venue['lieu_nom']}")
+    print(f"Venue : {venue['venue_name']}")
     print(f"{'='*60}")
 
     # 1. Fetch raw content
@@ -96,28 +96,28 @@ def process_venue(venue: dict, dry_run: bool = False, debug: bool = False) -> No
 
 def main():
     parser = argparse.ArgumentParser(description="Scrape cultural events for Monaco venues.")
-    parser.add_argument("--venue", help="lieu_id to process (default: all)", default=None)
+    parser.add_argument("--venue", help="venue_id to process (default: all)", default=None)
     parser.add_argument("--dry-run", action="store_true", help="Extract only, do not save")
     parser.add_argument("--debug", action="store_true", help="Print raw Tavily content before extraction")
     args = parser.parse_args()
 
     venues = VENUES
     if args.venue:
-        venues = [v for v in VENUES if v["lieu_id"] == args.venue]
+        venues = [v for v in VENUES if v["venue_id"] == args.venue]
         if not venues:
             print(f"Unknown venue: {args.venue}")
-            print(f"Available: {[v['lieu_id'] for v in VENUES]}")
+            print(f"Available: {[v['venue_id'] for v in VENUES]}")
             sys.exit(1)
 
     print(f"Monaco Cultural Scraper — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE'} {'| DEBUG' if args.debug else ''}")
-    print(f"Venues: {[v['lieu_id'] for v in venues]}")
+    print(f"Venues: {[v['venue_id'] for v in venues]}")
 
     for venue in venues:
         try:
             process_venue(venue, dry_run=args.dry_run, debug=args.debug)
         except Exception as e:
-            print(f"\n  ERROR processing {venue['lieu_id']}: {e}")
+            print(f"\n  ERROR processing {venue['venue_id']}: {e}")
 
     print(f"\nDone.")
 

@@ -41,9 +41,9 @@ def fix_season_years(events: list[dict], season: str) -> list[dict]:
             except ValueError:
                 pass
         # Recompute id to reflect corrected date_start
-        if event.get("date_start") and event.get("lieu_id") and event.get("titre"):
+        if event.get("date_start") and event.get("venue_id") and event.get("titre"):
             slug = re.sub(r"[^a-z0-9]+", "-", event["titre"].lower()).strip("-")
-            event["id"] = f"{event['lieu_id']}_{slug}_{event['date_start']}"
+            event["id"] = f"{event['venue_id']}_{slug}_{event['date_start']}"
 
     return events
 
@@ -56,7 +56,6 @@ def extract_events(raw_content: str, venue: dict) -> list[dict]:
 
     scraped_at = datetime.utcnow()
     always_current = venue.get("always_current", False)
-    duration_days = venue.get("current_duration_days", 45)
     default_start = scraped_at.strftime("%Y-%m-%d")
 
     season = venue.get("season")  # e.g. "2025-2026"
@@ -87,9 +86,13 @@ Si plusieurs dates pour un même événement, crée une entrée par date."""
 - Si le contenu mentionne un mois sans date précise (ex: "en mars"), utilise le 1er du mois comme date_start et le dernier jour du mois comme date_end."""
         year_filter = f"de {target_year}"
 
+    CONTENT_LIMIT = 100000
+    if len(raw_content) > CONTENT_LIMIT:
+        print(f"  Note: raw content truncated {len(raw_content):,} → {CONTENT_LIMIT:,} chars")
+
     prompt = f"""Tu es un extracteur de données structurées spécialisé en événements culturels.
 
-À partir du contenu brut ci-dessous, extrais uniquement les ÉVÉNEMENTS CULTURELS {year_filter} pour le lieu "{venue['lieu_nom']}".
+À partir du contenu brut ci-dessous, extrais uniquement les ÉVÉNEMENTS CULTURELS {year_filter} pour le lieu "{venue['venue_name']}".
 
 Un événement culturel valide est : concert, exposition, spectacle, festival, atelier, visite guidée, conférence, projection de film, comédie musicale, opéra, pièce de théâtre, séance de cinéma.
 
@@ -99,9 +102,9 @@ NE PAS extraire : offres promotionnelles, réductions, podcasts, articles de blo
 
 Retourne UNIQUEMENT un tableau JSON valide (pas de texte avant ou après) :
 {{
-  "id": "{venue['lieu_id']}_<slug-titre>_<date_start>",
-  "lieu_id": "{venue['lieu_id']}",
-  "lieu_nom": "{venue['lieu_nom']}",
+  "id": "{venue['venue_id']}_<slug-titre>_<date_start>",
+  "venue_id": "{venue['venue_id']}",
+  "venue_name": "{venue['venue_name']}",
   "titre": "string",
   "description": "string",
   "date_start": "YYYY-MM-DD",
@@ -123,11 +126,11 @@ Règles :
 - Utilise le titre en FRANÇAIS si disponible. Ne traduis jamais un titre depuis une autre langue.
 - tarif_value = prix entier minimum en euros (0 si gratuit)
 - gratuit = true si tarif_value == 0
-- id = lieu_id + "_" + slug titre en minuscules avec tirets + "_" + date_start
+- id = venue_id + "_" + slug titre en minuscules avec tirets + "_" + date_start
 - Si aucun événement valide trouvé, retourne []
 
 Contenu brut :
-{raw_content[:100000]}
+{raw_content[:CONTENT_LIMIT]}
 """
 
     try:
@@ -169,7 +172,7 @@ def generate_venue_md(raw_content: str, venue: dict) -> str:
 
     prompt = f"""Tu es un rédacteur de fiches pratiques.
 
-À partir du contenu brut ci-dessous, génère une fiche Markdown pour le lieu "{venue['lieu_nom']}".
+À partir du contenu brut ci-dessous, génère une fiche Markdown pour le lieu "{venue['venue_name']}".
 {context_block}
 La fiche doit contenir :
 - Titre (# Nom du lieu)
@@ -180,10 +183,10 @@ La fiche doit contenir :
 - Tags (liste de mots-clés)
 
 Retourne UNIQUEMENT le contenu Markdown brut, sans bloc de code, sans backticks, sans texte introductif.
-Le titre H1 doit être EXACTEMENT : # {venue['lieu_nom']}
+Le titre H1 doit être EXACTEMENT : # {venue['venue_name']}
 
 Format attendu (commence directement par la ligne #) :
-# {venue['lieu_nom']}
+# {venue['venue_name']}
 
 <!-- TYPE: lieu_statique -->
 <!-- CATEGORY: [categorie] -->
