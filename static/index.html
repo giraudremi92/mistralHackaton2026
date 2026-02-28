@@ -317,6 +317,33 @@ body { z-index:1; }
     return "🖼️";
   }
 
+  function buildShortTTS(data) {
+    var response = (data && data.response) || "";
+    var events = data && data.events && Array.isArray(data.events) ? data.events : null;
+    if (data && data.tts_text && (data.tts_text + "").trim()) return (data.tts_text + "").trim();
+    if (events && events.length > 0) {
+      var intro = (response || "").split("\n\n")[0] || "";
+      var titres = events.map(function(e) { return (e.titre || "").trim(); }).filter(Boolean);
+      return (intro.trim() + (titres.length ? " " + titres.join(", ") : "")).trim() || response;
+    }
+    var parts = (response || "").trim().split(/\n\n+/);
+    var intro = parts[0] || "";
+    var body = parts.slice(1).join("\n\n").trim();
+    var items = body ? body.split(/(?=^\d+\.\s)/m).filter(function(s) { return /^\d+\.\s/.test(s.trim()); }) : [];
+    if (items.length > 0) {
+      var firstLine = items[0].replace(/^\d+\.\s*/, "").trim();
+      if (looksLikeEventList(intro, firstLine)) {
+        var titres = items.map(function(it) {
+          var line = it.replace(/^\d+\.\s*/, "").trim();
+          var p = parseEventLine(line);
+          return p.title || line.split(". ")[0] || line;
+        }).filter(Boolean);
+        return (intro.trim() + (titres.length ? " " + titres.join(", ") : "")).trim() || stripUrlsForTTS(response);
+      }
+    }
+    return stripUrlsForTTS(response);
+  }
+
   function renderAgentResponse(txt) {
     if (!txt || !txt.trim()) return "";
     var parts = txt.trim().split(/\n\n+/);
@@ -424,6 +451,7 @@ body { z-index:1; }
       if (!tarif && e.gratuit) tarif = "Entrée libre";
       if (!tarif) tarif = "Prix non communiqué";
       var linkUrl = (e.url != null && e.url !== "") ? String(e.url).trim() : "";
+      if (!linkUrl && e.source) linkUrl = (e.source != null && e.source !== "") ? String(e.source).trim() : "";
       var domain = linkUrl ? getDomainFromUrl(linkUrl) : "";
       var emoji = "🎭";
       if (kind === "concert") emoji = "🎵";
@@ -465,7 +493,31 @@ body { z-index:1; }
     return m + ":" + (s < 10 ? "0" : "") + s;
   }
 
-  function addAudioPlayer(wrap, text) {
+  function attachAudioFromBlob(audioDiv, blob) {
+    var playBtn = audioDiv.querySelector(".play-btn");
+    var progress = audioDiv.querySelector(".audio-progress");
+    var timeEl = audioDiv.querySelector(".audio-time");
+    var url = URL.createObjectURL(blob);
+    var audio = new Audio(url);
+    audioDiv._audio = audio;
+    audio.onended = function() {
+      playBtn.innerHTML = "▶";
+      progress.style.width = "0%";
+      timeEl.textContent = "0:00 / " + formatTime(audio.duration);
+      playBtn.disabled = false;
+      URL.revokeObjectURL(url);
+    };
+    audio.onloadedmetadata = function() {
+      timeEl.textContent = "0:00 / " + formatTime(audio.duration);
+    };
+    audio.ontimeupdate = function() {
+      var p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+      progress.style.width = p + "%";
+      timeEl.textContent = formatTime(audio.currentTime) + " / " + formatTime(audio.duration);
+    };
+  }
+
+  function addAudioPlayer(wrap, text, preloadedBlob) {
     var msg = wrap.querySelector(".msg");
     var audioDiv = msg.querySelector(".msg-audio");
     if (audioDiv) return audioDiv;
@@ -488,6 +540,8 @@ body { z-index:1; }
     audioDiv.appendChild(barWrap);
     audioDiv.appendChild(timeEl);
     msg.appendChild(audioDiv);
+
+    if (preloadedBlob) attachAudioFromBlob(audioDiv, preloadedBlob);
 
     playBtn.addEventListener("click", function() {
       if (audioDiv._audio) {
@@ -512,25 +566,8 @@ body { z-index:1; }
           return r.blob();
         })
         .then(function(blob) {
-          var url = URL.createObjectURL(blob);
-          var audio = new Audio(url);
-          audioDiv._audio = audio;
-          audio.onended = function() {
-            playBtn.innerHTML = "▶";
-            progress.style.width = "0%";
-            timeEl.textContent = "0:00 / " + formatTime(audio.duration);
-            playBtn.disabled = false;
-            URL.revokeObjectURL(url);
-          };
-          audio.onloadedmetadata = function() {
-            timeEl.textContent = "0:00 / " + formatTime(audio.duration);
-          };
-          audio.ontimeupdate = function() {
-            var p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-            progress.style.width = p + "%";
-            timeEl.textContent = formatTime(audio.currentTime) + " / " + formatTime(audio.duration);
-          };
-          audio.play().then(function() {
+          attachAudioFromBlob(audioDiv, blob);
+          audioDiv._audio.play().then(function() {
             playBtn.innerHTML = "⏸";
             playBtn.disabled = false;
           }).catch(function() {
@@ -639,16 +676,39 @@ body { z-index:1; }
     })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        removeTyping(typingWrap);
         var response = (data && data.response) || "";
         var events = data && data.events && Array.isArray(data.events) ? data.events : null;
+        var ttsText = buildShortTTS(data);
         state.history.push({ role: "assistant", content: response });
-        var agentWrap = appendMessage("assistant", response, false, events);
-        var ttsText = (data && data.tts_text && (data.tts_text + "").trim()) ? (data.tts_text + "").trim() : stripUrlsForTTS(response);
-        addAudioPlayer(agentWrap, ttsText);
-        if (state.speakerAuto || isVocal) {
-          playTTSForMessage(agentWrap, ttsText);
+
+        function showMessage(blob) {
+          removeTyping(typingWrap);
+          var agentWrap = appendMessage("assistant", response, false, events);
+          addAudioPlayer(agentWrap, ttsText, blob || null);
+          if (state.speakerAuto || isVocal) {
+            var ad = agentWrap.querySelector(".msg-audio");
+            if (ad && ad._audio) {
+              ad._audio.play();
+              ad.querySelector(".play-btn").innerHTML = "⏸";
+            } else if (ad && ttsText) playTTSForMessage(agentWrap, ttsText);
+          }
         }
+
+        if (!(ttsText && ttsText.trim())) {
+          showMessage(null);
+          return;
+        }
+        fetch("/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: ttsText.trim(), voice_id: state.voiceId || null }),
+        })
+          .then(function(r) {
+            if (!r.ok) throw new Error("TTS failed");
+            return r.blob();
+          })
+          .then(function(blob) { showMessage(blob); })
+          .catch(function() { showMessage(null); });
       })
       .catch(function() {
         removeTyping(typingWrap);
@@ -788,14 +848,37 @@ body { z-index:1; }
               })
                 .then(function(res) { return res.json(); })
                 .then(function(chatData) {
-                  removeTyping(typingWrap);
                   var response = (chatData && chatData.response) || "";
                   var events = chatData && chatData.events && Array.isArray(chatData.events) ? chatData.events : null;
+                  var ttsText = buildShortTTS(chatData);
                   state.history.push({ role: "assistant", content: response });
-                  var agentWrap = appendMessage("assistant", response, false, events);
-                  var ttsText = (chatData && chatData.tts_text && (chatData.tts_text + "").trim()) ? (chatData.tts_text + "").trim() : stripUrlsForTTS(response);
-                  addAudioPlayer(agentWrap, ttsText);
-                  playTTSForMessage(agentWrap, ttsText);
+
+                  function showMessage(blob) {
+                    removeTyping(typingWrap);
+                    var agentWrap = appendMessage("assistant", response, false, events);
+                    addAudioPlayer(agentWrap, ttsText, blob || null);
+                    var ad = agentWrap.querySelector(".msg-audio");
+                    if (ad && ad._audio) {
+                      ad._audio.play();
+                      ad.querySelector(".play-btn").innerHTML = "⏸";
+                    } else if (ad && ttsText) playTTSForMessage(agentWrap, ttsText);
+                  }
+
+                  if (!(ttsText && ttsText.trim())) {
+                    showMessage(null);
+                    return;
+                  }
+                  fetch("/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: ttsText.trim(), voice_id: state.voiceId || null }),
+                  })
+                    .then(function(r) {
+                      if (!r.ok) throw new Error("TTS failed");
+                      return r.blob();
+                    })
+                    .then(function(blob) { showMessage(blob); })
+                    .catch(function() { showMessage(null); });
                 })
                 .catch(function() {
                   removeTyping(typingWrap);
