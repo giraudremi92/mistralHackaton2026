@@ -18,7 +18,7 @@ PROVIDERS = {
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
         "api_key": os.getenv("NVIDIA_API_KEY", ""),
-        "default_model": "meta/llama-3.1-70b-instruct",
+        "default_model": os.getenv("NVIDIA_MODEL", "mistralai/ministral-14b-instruct-2512"),
     },
 }
 
