@@ -1,3 +1,6 @@
 openai
 gradio
 python-dotenv
+dateparser
+requests
+numpy
