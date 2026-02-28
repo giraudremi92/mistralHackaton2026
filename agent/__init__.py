@@ -9,7 +9,10 @@ from agent.providers import chat
 ROOT = Path(__file__).resolve().parent.parent
 CONTEXT_FILES = [ROOT / "SYSTEM_PROMPT.md", ROOT / "MEMORY.md"]
 CULTURE_DATA_DIR = ROOT / "culture_data"
+CATEGORIES_FILE = CULTURE_DATA_DIR / "categories.json"
 DATE_LANGUAGES = ["fr", "en", "es", "it", "ru"]
+MAX_EVENTS_IN_FIXED_LIST = 50
+FALLBACK_MESSAGE = "Désolé, impossible de répondre pour le moment."
 
 
 def extract_date_range(text: str) -> tuple[date | None, date | None]:
@@ -58,6 +61,34 @@ def format_events_summary(events: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def format_events_fixed(events: list[dict], max_items: int = MAX_EVENTS_IN_FIXED_LIST) -> str:
+    lines = []
+    for i, e in enumerate(events[:max_items], 1):
+        titre = e.get("titre", "")
+        start = e.get("date_start", "")
+        end = e.get("date_end", "")
+        lieu = e.get("lieu_nom", "")
+        tarif = e.get("tarif", "") or "Prix non communiqué"
+        url = e.get("url", "")
+        line = f"{i}. {titre}. Du {start} au {end}. Lieu : {lieu}. Tarif : {tarif}."
+        if url:
+            line += f" Lien : {url}."
+        lines.append(line)
+    return "\n\n".join(lines)
+
+
+def build_fixed_intro(date_min: date | None, date_max: date | None, count: int) -> str:
+    if date_min and date_max:
+        period = f"du {date_min.strftime('%d/%m/%Y')} au {date_max.strftime('%d/%m/%Y')}"
+    elif date_min:
+        period = f"à partir du {date_min.strftime('%d/%m/%Y')}"
+    elif date_max:
+        period = f"jusqu'au {date_max.strftime('%d/%m/%Y')}"
+    else:
+        period = "disponibles"
+    return f"Événements à Monaco {period}. {count} résultat(s)."
+
+
 def get_last_scraped_at() -> str:
     all_events = get_all_events()
     scraped_dates = [e.get("scraped_at") for e in all_events if e.get("scraped_at")]
@@ -72,6 +103,17 @@ def get_last_scraped_at() -> str:
         except (ValueError, TypeError):
             pass
     return datetime.now().strftime("%Y-%m-%d à %H:%M")
+
+
+def load_categories_labels() -> list[str]:
+    if not CATEGORIES_FILE.exists():
+        return []
+    try:
+        data = json.loads(CATEGORIES_FILE.read_text(encoding="utf-8"))
+        cats = data.get("categories") or []
+        return [c.get("label", "") for c in cats if c.get("label")]
+    except (json.JSONDecodeError, OSError):
+        return []
 
 
 def get_all_events() -> list[dict]:
@@ -111,6 +153,9 @@ def load_culture_context(date_min: date | None = None, date_max: date | None = N
     if not CULTURE_DATA_DIR.exists():
         return ""
     parts = []
+    labels = load_categories_labels()
+    if labels:
+        parts.append("## Catégories disponibles\n\n" + ", ".join(labels) + ".")
     venues = load_venue_markdown(CULTURE_DATA_DIR)
     if venues:
         parts.append("## Venues\n\n" + venues)
@@ -118,6 +163,8 @@ def load_culture_context(date_min: date | None = None, date_max: date | None = N
     events = filter_events_by_date(all_events, date_min, date_max)
     if events:
         parts.append("## Events\n\n" + format_events_summary(events))
+    elif date_min is not None or date_max is not None:
+        parts.append("## Events\n\nAucun événement trouvé pour la période demandée. Indiquer à l'utilisateur qu'aucun événement ne correspond dans les données et ne pas inventer d'événements.")
     return "\n\n".join(parts) if parts else ""
 
 
@@ -136,8 +183,28 @@ def load_context(user_message: str | None = None) -> str:
 
 
 def respond(message: str, history: list, provider: str = "mistral", model: str | None = None) -> str:
-    messages = [{"role": "system", "content": load_context(message)}]
+    date_min, date_max = extract_date_range(message)
+    all_events = get_all_events()
+    filtered = filter_events_by_date(all_events, date_min, date_max)
 
+    if date_min is not None or date_max is not None:
+        if not filtered:
+            period = ""
+            if date_min and date_max:
+                period = f" du {date_min.strftime('%d/%m/%Y')} au {date_max.strftime('%d/%m/%Y')}"
+            elif date_min:
+                period = f" à partir du {date_min.strftime('%d/%m/%Y')}"
+            elif date_max:
+                period = f" jusqu'au {date_max.strftime('%d/%m/%Y')}"
+            return f"Aucun événement trouvé pour la période{period}. Vérifiez sur le site officiel ou précisez une autre date."
+        intro = build_fixed_intro(date_min, date_max, len(filtered))
+        list_str = format_events_fixed(filtered)
+        extra = len(filtered) - MAX_EVENTS_IN_FIXED_LIST
+        if extra > 0:
+            list_str += f"\n\n{extra} autre(s) événement(s) disponible(s). Précisez la date ou le type pour affiner."
+        return intro + "\n\n" + list_str
+
+    messages = [{"role": "system", "content": load_context(message)}]
     for msg in history:
         if isinstance(msg, dict):
             messages.append({"role": msg["role"], "content": msg["content"]})
@@ -146,6 +213,11 @@ def respond(message: str, history: list, provider: str = "mistral", model: str |
             messages.append({"role": "user", "content": user_msg})
             if assistant_msg:
                 messages.append({"role": "assistant", "content": assistant_msg})
-
     messages.append({"role": "user", "content": message})
-    return chat(messages, provider=provider, model=model or None)
+    try:
+        return chat(messages, provider=provider, model=model or None)
+    except Exception:
+        try:
+            return chat(messages, provider=provider, model=model or None)
+        except Exception:
+            return FALLBACK_MESSAGE
