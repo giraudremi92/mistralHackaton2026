@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monaco Cultural Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary:    #0a0a0a;
+  --bg-secondary:  #111111;
+  --bg-tertiary:   #1a1a1a;
+  --accent-red:    #e8002d;
+  --accent-red-dim:rgba(232,0,45,0.12);
+  --accent-gold:   #c9a84c;
+  --accent-gold-l: #e8c870;
+  --text-primary:  #f0f0f0;
+  --text-secondary:#555555;
+  --border:        #1f1f1f;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:0;
+}
+body { z-index:1; }
+#header, #app { position:relative; z-index:1; }
+#header {
+  display:flex; align-items:center;
+  padding: 0 28px; height: 58px;
+  border-bottom: 2px solid var(--accent-red);
+  background: var(--bg-primary);
+  gap: 16px; flex-shrink: 0;
+}
+.logo { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--text-primary); }
+.logo em { color:var(--accent-red); font-style:normal; }
+.sep { width:1px; height:18px; background:var(--border); }
+.tagline { font-size:10px; color:var(--text-secondary); letter-spacing:2.5px; text-transform:uppercase; font-weight:300; }
+.badge { margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--accent-gold); border:1px solid rgba(201,168,76,0.35); padding:3px 10px; letter-spacing:2px; text-transform:uppercase; }
+#app { display:flex; height:calc(100vh - 58px); overflow:hidden; }
+#chat-area { flex:1; display:flex; flex-direction:column; border-right:1px solid var(--border); overflow:hidden; }
+#messages { flex:1; overflow-y:auto; padding:28px 32px; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth; }
+#messages::-webkit-scrollbar { width:3px; }
+#messages::-webkit-scrollbar-thumb { background:var(--accent-red); border-radius:2px; }
+#messages::-webkit-scrollbar-track { background:transparent; }
+.msg-wrap { display:flex; flex-direction:column; gap:4px; animation:fadeUp 0.2s ease-out; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.msg-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; font-family:'JetBrains Mono',monospace; padding:0 4px; }
+.msg-label.user-label { color:rgba(232,0,45,0.6); text-align:right; }
+.msg-label.agent-label { color:var(--accent-gold); text-align:left; }
+.msg { padding:11px 16px; border-radius:4px; font-size:14px; line-height:1.65; max-width:78%; }
+.msg.user { align-self:flex-end; background:var(--bg-tertiary); border:1px solid var(--border); border-right:3px solid var(--accent-red); box-shadow:2px 2px 16px rgba(232,0,45,0.06); }
+.msg.agent { align-self:flex-start; background:var(--bg-tertiary); border:1px solid var(--border); border-right:3px solid var(--accent-gold); box-shadow:2px 2px 16px rgba(232, 217, 0, 0.06); max-width:78%; }
+.msg.agent ul { padding-left:18px; margin-top:6px; }
+.msg.agent li { margin-bottom:6px; color:#ccc; }
+.event-title { color:var(--accent-gold-l); font-weight:500; }
+.event-meta { color:var(--text-secondary); font-size:12px; margin-top:2px; }
+.msg.agent a { color:var(--accent-red); text-decoration:none; font-size:12px; }
+.msg.agent a:hover { text-decoration:underline; }
+.msg-audio { display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
+.play-btn { width:28px; height:28px; border-radius:50%; background:transparent; border:1px solid var(--accent-gold); color:var(--accent-gold); font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 120ms; flex-shrink:0; }
+.play-btn:hover { background:rgba(201,168,76,0.12); }
+.audio-bar { flex:1; height:2px; background:var(--border); border-radius:1px; cursor:pointer; position:relative; }
+.audio-progress { height:100%; background:var(--accent-gold); border-radius:1px; width:0%; transition:width 0.1s; }
+.audio-time { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-secondary); white-space:nowrap; }
+.typing-indicator { display:flex; align-items:center; gap:10px; padding:10px 16px; background:var(--bg-secondary); border:1px solid var(--border); border-left:3px solid var(--accent-gold); border-radius:4px; align-self:flex-start; width:fit-content; }
+.dots { display:flex; gap:4px; align-items:center; }
+.dot { width:5px; height:5px; border-radius:50%; background:var(--accent-gold); animation:blink 1.2s ease-in-out infinite; }
+.dot:nth-child(2){animation-delay:0.2s} .dot:nth-child(3){animation-delay:0.4s}
+.typing-label { font-size:11px; color:var(--text-secondary); font-style:italic; }
+@keyframes blink { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.1)} }
+#suggestions { display:flex; flex-wrap:wrap; gap:8px; padding:12px 28px; border-top:1px solid var(--border); background:var(--bg-primary); transition:opacity 0.3s,max-height 0.3s; overflow:hidden; max-height:60px; }
+#suggestions.hidden { opacity:0; max-height:0; padding:0 28px; }
+.sugg { background:transparent; border:1px solid var(--border); color:var(--text-secondary); font-size:12px; font-family:'Inter',sans-serif; padding:5px 12px; border-radius:3px; cursor:pointer; transition:all 120ms; white-space:nowrap; }
+.sugg:hover { border-color:var(--accent-gold); color:var(--accent-gold-l); background:rgba(201,168,76,0.05); }
+#input-bar { display:flex; align-items:center; gap:8px; padding:12px 20px; background:var(--bg-secondary); border-top:1px solid var(--border); }
+#mic-btn { width:44px; height:44px; border-radius:50%; background:var(--bg-tertiary); border:1px solid var(--border); color:var(--text-secondary); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 120ms; position:relative; }
+#mic-btn:hover { border-color:var(--accent-red); color:var(--accent-red); }
+#mic-btn.active { background:var(--accent-red); border-color:var(--accent-red); color:white; animation:mic-pulse 1.3s ease-in-out infinite; }
+#mic-btn.active::after { content:''; position:absolute; inset:-7px; border-radius:50%; border:2px solid var(--accent-red); animation:ring-out 1.3s ease-out infinite; }
+@keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(232,0,45,0.5)} 50%{box-shadow:0 0 0 6px rgba(232,0,45,0)} }
+@keyframes ring-out { 0%{transform:scale(1);opacity:0.7} 100%{transform:scale(1.7);opacity:0} }
+#text-input { flex:1; background:var(--bg-tertiary); border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-family:'Inter',sans-serif; font-size:14px; padding:10px 14px; outline:none; transition:border-color 120ms; height:44px; }
+#text-input:focus { border-color:var(--accent-red); box-shadow:0 0 0 2px rgba(232,0,45,0.1); }
+#text-input::placeholder { color:var(--text-secondary); font-size:13px; }
+#send-btn { height:44px; background:var(--accent-red); color:white; border:none; border-radius:4px; font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:0 22px; cursor:pointer; transition:all 120ms; white-space:nowrap; flex-shrink:0; }
+#send-btn:hover { background:#ff1a42; box-shadow:0 2px 14px rgba(232,0,45,0.3); transform:translateY(-1px); }
+#sidebar { width:240px; min-width:240px; background:var(--bg-secondary); padding:20px 16px; display:flex; flex-direction:column; gap:18px; overflow-y:auto; border-left:1px solid var(--border); }
+#sidebar::-webkit-scrollbar{width:2px} #sidebar::-webkit-scrollbar-thumb{background:var(--border)}
+.s-status { display:flex; align-items:center; gap:7px; font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-secondary); letter-spacing:1.5px; text-transform:uppercase; }
+.dot-live { width:5px; height:5px; border-radius:50%; background:#00c851; box-shadow:0 0 6px rgba(0,200,81,0.8); flex-shrink:0; }
+.s-divider { height:1px; background:var(--border); }
+.s-title { font-family:'Rajdhani',sans-serif; font-size:10px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:8px; }
+.s-select { width:100%; background:var(--bg-tertiary); border:1px solid var(--border); border-radius:3px; color:var(--text-primary); font-size:13px; font-family:'Inter',sans-serif; padding:8px 10px; outline:none; cursor:pointer; margin-bottom:8px; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+.s-select:focus { border-color:var(--accent-gold); }
+.s-label { font-size:10px; color:var(--text-secondary); letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:5px; }
+.s-checkbox-row { display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:8px; }
+.s-checkbox-row input[type="checkbox"] { accent-color:var(--accent-gold); width:14px; height:14px; cursor:pointer; }
+.s-checkbox-row span { font-size:12px; color:var(--text-primary); }
+.s-about { background:var(--bg-tertiary); border:1px solid var(--border); border-radius:4px; padding:14px; font-size:11px; color:var(--text-secondary); line-height:1.8; flex:1; }
+.s-about-title { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--accent-gold); letter-spacing:2px; display:block; margin-bottom:10px; }
+.s-source { color:#333; font-size:10px; font-family:'JetBrains Mono',monospace; letter-spacing:0.5px; }
+#rec-overlay { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--bg-secondary); border:1px solid var(--accent-red); border-radius:4px; padding:10px 20px; display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-secondary); letter-spacing:1px; opacity:0; pointer-events:none; transition:all 200ms ease; z-index:100; box-shadow:0 4px 20px rgba(232,0,45,0.15); }
+#rec-overlay.visible { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+.rec-dot { width:7px; height:7px; border-radius:50%; background:var(--accent-red); animation:blink-dot 0.8s ease-in-out infinite alternate; }
+@keyframes blink-dot { from{opacity:1} to{opacity:0.2} }
+#transcription-toast { position:fixed; top:70px; right:28px; background:var(--bg-secondary); border:1px solid var(--accent-gold); border-radius:4px; padding:10px 16px; font-size:12px; color:var(--text-secondary); letter-spacing:0.5px; opacity:0; transform:translateX(10px); transition:all 250ms ease; z-index:100; max-width:280px; }
+#transcription-toast.visible { opacity:1; transform:translateX(0); }
+.toast-label { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--accent-gold); letter-spacing:2px; text-transform:uppercase; display:block; margin-bottom:4px; }
+</style>
+</head>
+<body>
+<div id="header">
+  <div class="logo">🏎 <em>Monaco</em> Cultural Agent</div>
+  <div class="sep"></div>
+  <div class="tagline">Principauté de Monaco</div>
+  <div class="badge">Mistral Hackathon 2026</div>
+</div>
+<div id="app">
+  <div id="chat-area">
+    <div id="messages"></div>
+    <div id="suggestions">
+      <button type="button" class="sugg" data-sugg="🎵 Concerts ce weekend à Monaco">🎵 Concerts ce weekend à Monaco</button>
+      <button type="button" class="sugg" data-sugg="🖼️ Expositions en cours">🖼️ Expositions en cours</button>
+      <button type="button" class="sugg" data-sugg="🎭 Agenda du Grimaldi Forum">🎭 Agenda du Grimaldi Forum</button>
+      <button type="button" class="sugg" data-sugg="🎪 Événements gratuits cette semaine">🎪 Événements gratuits cette semaine</button>
+    </div>
+    <div id="input-bar">
+      <button type="button" id="mic-btn" title="Enregistrement vocal">🎙</button>
+      <input type="text" id="text-input" placeholder="Posez votre question sur Monaco…" />
+      <button type="button" id="send-btn">Envoyer</button>
+    </div>
+  </div>
+  <div id="sidebar">
+    <div class="s-status"><div class="dot-live"></div>Agent actif</div>
+    <div class="s-divider"></div>
+    <div>
+      <div class="s-title">Modèle</div>
+      <span class="s-label">Provider</span>
+      <select id="provider-select" class="s-select"></select>
+      <span class="s-label">Modèle</span>
+      <select id="model-select" class="s-select"></select>
+    </div>
+    <div class="s-divider"></div>
+    <div>
+      <div class="s-title">Voix ElevenLabs</div>
+      <label class="s-checkbox-row">
+        <input type="checkbox" id="speaker-chk" />
+        <span>Réponse vocale auto</span>
+      </label>
+      <span class="s-label">Voix</span>
+      <select id="voice-select" class="s-select"></select>
+    </div>
+    <div class="s-divider"></div>
+    <div class="s-about">
+      <span class="s-about-title">// À PROPOS</span>
+      Agent spécialisé événements culturels de la Principauté de Monaco.<br><br>
+      <span style="color:#333;font-size:10px;font-family:'JetBrains Mono',monospace">Sources :</span><br>
+      <span class="s-source">culture.mc</span><br>
+      <span class="s-source">mairie.mc</span><br>
+      <span class="s-source">visitmonaco.com</span><br>
+      <span class="s-source">grimaldiforum.com</span>
+    </div>
+  </div>
+</div>
+<div id="rec-overlay"><div class="rec-dot"></div>Enregistrement en cours… Cliquez ⏹ pour envoyer</div>
+<div id="transcription-toast"><span class="toast-label">// Voxtral</span><span id="toast-text"></span></div>
+<script>
+(function() {
+  const MODELS = {
+    "mistral": ["ministral-8b-latest", "mistral-large-latest", "mistral-small-latest"],
+    "vllm": [],
+    "nvidia": ["meta/llama-3.1-70b-instruct", "mistralai/mistral-large"],
+  };
+  const PROVIDERS = ["mistral", "vllm", "nvidia"];
+
+  const state = {
+    history: [],
+    provider: "mistral",
+    model: "ministral-8b-latest",
+    voiceId: "",
+    speakerAuto: false,
+    recording: false,
+    mediaRecorder: null,
+    audioChunks: [],
+  };
+
+  const messagesEl = document.getElementById("messages");
+  const suggestionsEl = document.getElementById("suggestions");
+  const textInput = document.getElementById("text-input");
+  const sendBtn = document.getElementById("send-btn");
+  const micBtn = document.getElementById("mic-btn");
+  const providerSelect = document.getElementById("provider-select");
+  const modelSelect = document.getElementById("model-select");
+  const voiceSelect = document.getElementById("voice-select");
+  const speakerChk = document.getElementById("speaker-chk");
+  const recOverlay = document.getElementById("rec-overlay");
+  const toastEl = document.getElementById("transcription-toast");
+  const toastText = document.getElementById("toast-text");
+
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function renderMarkup(txt) {
+    if (!txt) return "";
+    return escapeHtml(txt)
+      .replace(/\n/g, "<br>")
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/^- (.+)$/gm, "<li>$1</li>")
+      .replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
+  }
+
+  function appendMessage(role, content, isVocal) {
+    const wrap = document.createElement("div");
+    wrap.className = "msg-wrap";
+    const isUser = role === "user";
+    const label = document.createElement("div");
+    label.className = "msg-label " + (isUser ? "user-label" : "agent-label");
+    label.textContent = isUser ? (isVocal ? "VOUS · 🎙 VOCAL" : "VOUS") : "AGENT";
+    const msg = document.createElement("div");
+    msg.className = "msg " + (isUser ? "user" : "agent");
+    msg.innerHTML = renderMarkup(content);
+    wrap.appendChild(label);
+    wrap.appendChild(msg);
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return wrap;
+  }
+
+  function formatTime(sec) {
+    if (!isFinite(sec) || sec < 0) return "0:00";
+    var m = Math.floor(sec / 60);
+    var s = Math.floor(sec % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function addAudioPlayer(wrap, text) {
+    var msg = wrap.querySelector(".msg");
+    var audioDiv = msg.querySelector(".msg-audio");
+    if (audioDiv) return audioDiv;
+    audioDiv = document.createElement("div");
+    audioDiv.className = "msg-audio";
+    var playBtn = document.createElement("button");
+    playBtn.type = "button";
+    playBtn.className = "play-btn";
+    playBtn.innerHTML = "▶";
+    playBtn.title = "Écouter";
+    var barWrap = document.createElement("div");
+    barWrap.className = "audio-bar";
+    var progress = document.createElement("div");
+    progress.className = "audio-progress";
+    barWrap.appendChild(progress);
+    var timeEl = document.createElement("span");
+    timeEl.className = "audio-time";
+    timeEl.textContent = "0:00 / 0:00";
+    audioDiv.appendChild(playBtn);
+    audioDiv.appendChild(barWrap);
+    audioDiv.appendChild(timeEl);
+    msg.appendChild(audioDiv);
+
+    playBtn.addEventListener("click", function() {
+      if (audioDiv._audio) {
+        if (audioDiv._audio.paused) {
+          audioDiv._audio.play();
+          playBtn.innerHTML = "⏸";
+        } else {
+          audioDiv._audio.pause();
+          playBtn.innerHTML = "▶";
+        }
+        return;
+      }
+      if (!(text || "").trim()) return;
+      playBtn.disabled = true;
+      fetch("/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.trim(), voice_id: state.voiceId || null }),
+      })
+        .then(function(r) {
+          if (!r.ok) throw new Error("TTS failed");
+          return r.blob();
+        })
+        .then(function(blob) {
+          var url = URL.createObjectURL(blob);
+          var audio = new Audio(url);
+          audioDiv._audio = audio;
+          audio.onended = function() {
+            playBtn.innerHTML = "▶";
+            progress.style.width = "0%";
+            timeEl.textContent = "0:00 / " + formatTime(audio.duration);
+            playBtn.disabled = false;
+            URL.revokeObjectURL(url);
+          };
+          audio.onloadedmetadata = function() {
+            timeEl.textContent = "0:00 / " + formatTime(audio.duration);
+          };
+          audio.ontimeupdate = function() {
+            var p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+            progress.style.width = p + "%";
+            timeEl.textContent = formatTime(audio.currentTime) + " / " + formatTime(audio.duration);
+          };
+          audio.play().then(function() {
+            playBtn.innerHTML = "⏸";
+            playBtn.disabled = false;
+          }).catch(function() {
+            playBtn.disabled = false;
+          });
+        })
+        .catch(function() {
+          playBtn.disabled = false;
+        });
+    });
+    return audioDiv;
+  }
+
+  function playTTSForMessage(wrap, text) {
+    if (!(text || "").trim()) return;
+    addAudioPlayer(wrap, text);
+    var audioDiv = wrap.querySelector(".msg-audio");
+    var playBtn = audioDiv.querySelector(".play-btn");
+    if (audioDiv._audio) {
+      audioDiv._audio.currentTime = 0;
+      audioDiv._audio.play();
+      playBtn.innerHTML = "⏸";
+      return;
+    }
+    playBtn.disabled = true;
+    fetch("/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text.trim(), voice_id: state.voiceId || null }),
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error("TTS failed");
+        return r.blob();
+      })
+      .then(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var audio = new Audio(url);
+        audioDiv._audio = audio;
+        var progress = audioDiv.querySelector(".audio-progress");
+        var timeEl = audioDiv.querySelector(".audio-time");
+        audio.onended = function() {
+          playBtn.innerHTML = "▶";
+          progress.style.width = "0%";
+          timeEl.textContent = "0:00 / " + formatTime(audio.duration);
+          playBtn.disabled = false;
+          URL.revokeObjectURL(url);
+        };
+        audio.onloadedmetadata = function() {
+          timeEl.textContent = "0:00 / " + formatTime(audio.duration);
+        };
+        audio.ontimeupdate = function() {
+          var p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+          progress.style.width = p + "%";
+          timeEl.textContent = formatTime(audio.currentTime) + " / " + formatTime(audio.duration);
+        };
+        audio.play().then(function() {
+          playBtn.innerHTML = "⏸";
+          playBtn.disabled = false;
+        }).catch(function() {
+          playBtn.disabled = false;
+        });
+      })
+      .catch(function() {
+        playBtn.disabled = false;
+      });
+  }
+
+  function showTyping() {
+    var wrap = document.createElement("div");
+    wrap.className = "msg-wrap typing-wrap";
+    wrap.innerHTML = '<div class="typing-indicator"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="typing-label">Agent recherche…</span></div>';
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return wrap;
+  }
+
+  function removeTyping(wrap) {
+    if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+  }
+
+  function showToast(text) {
+    toastText.textContent = text || "";
+    toastEl.classList.add("visible");
+    setTimeout(function() {
+      toastEl.classList.remove("visible");
+    }, 3500);
+  }
+
+  function sendMessage(message, isVocal) {
+    var text = (message || "").trim();
+    if (!text) return;
+    state.history.push({ role: "user", content: text });
+    appendMessage("user", text, !!isVocal);
+    suggestionsEl.classList.add("hidden");
+
+    var typingWrap = showTyping();
+    fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: text,
+        history: state.history.slice(0, -1),
+        provider: state.provider,
+        model: state.model || null,
+      }),
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        removeTyping(typingWrap);
+        var response = (data && data.response) || "";
+        state.history.push({ role: "assistant", content: response });
+        var agentWrap = appendMessage("assistant", response, false);
+        addAudioPlayer(agentWrap, response);
+        if (state.speakerAuto || isVocal) {
+          playTTSForMessage(agentWrap, response);
+        }
+      })
+      .catch(function() {
+        removeTyping(typingWrap);
+        state.history.push({ role: "assistant", content: "Désolé, une erreur s'est produite." });
+        appendMessage("assistant", "Désolé, une erreur s'est produite.", false);
+      });
+  }
+
+  function populateProviders() {
+    providerSelect.innerHTML = "";
+    PROVIDERS.forEach(function(p) {
+      const opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = p;
+      if (p === state.provider) opt.selected = true;
+      providerSelect.appendChild(opt);
+    });
+  }
+
+  function populateModels() {
+    const list = MODELS[state.provider] || [];
+    const prev = state.model;
+    modelSelect.innerHTML = "";
+    list.forEach(function(m) {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      if (m === prev || (!prev && list.length)) opt.selected = true;
+      modelSelect.appendChild(opt);
+    });
+    state.model = modelSelect.value || (list[0] || "");
+  }
+
+  function populateVoices() {
+    fetch("/voices")
+      .then(function(r) { return r.json(); })
+      .then(function(voices) {
+        voiceSelect.innerHTML = "";
+        const defOpt = document.createElement("option");
+        defOpt.value = "";
+        defOpt.textContent = "Par défaut";
+        voiceSelect.appendChild(defOpt);
+        (voices || []).forEach(function(v) {
+          const opt = document.createElement("option");
+          opt.value = v.voice_id || "";
+          opt.textContent = v.name || v.voice_id || "";
+          voiceSelect.appendChild(opt);
+        });
+        if (voices && voices.length && !state.voiceId) state.voiceId = voices[0].voice_id || "";
+      })
+      .catch(function() {});
+  }
+
+  providerSelect.addEventListener("change", function() {
+    state.provider = providerSelect.value;
+    populateModels();
+  });
+
+  modelSelect.addEventListener("change", function() {
+    state.model = modelSelect.value;
+  });
+
+  voiceSelect.addEventListener("change", function() {
+    state.voiceId = voiceSelect.value;
+  });
+
+  speakerChk.addEventListener("change", function() {
+    state.speakerAuto = speakerChk.checked;
+  });
+
+  sendBtn.addEventListener("click", function() {
+    sendMessage(textInput.value, false);
+    textInput.value = "";
+  });
+
+  textInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(textInput.value, false);
+      textInput.value = "";
+    }
+  });
+
+  document.querySelectorAll(".sugg").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      const text = btn.getAttribute("data-sugg") || btn.textContent;
+      sendMessage(text, false);
+    });
+  });
+
+  micBtn.addEventListener("click", function() {
+    if (state.recording) {
+      state.recording = false;
+      micBtn.classList.remove("active");
+      micBtn.textContent = "🎙";
+      recOverlay.classList.remove("visible");
+      if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
+        state.mediaRecorder.stop();
+      }
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        state.audioChunks = [];
+        const mr = new MediaRecorder(stream);
+        state.mediaRecorder = mr;
+        mr.ondataavailable = function(e) {
+          if (e.data.size) state.audioChunks.push(e.data);
+        };
+        mr.onstop = function() {
+          stream.getTracks().forEach(function(t) { t.stop(); });
+          const blob = new Blob(state.audioChunks, { type: "audio/webm" });
+          const fd = new FormData();
+          fd.append("file", blob, "recording.webm");
+          fetch("/transcribe", { method: "POST", body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              const text = (data && data.text) || "";
+              if (!text) return;
+              showToast(text);
+              state.history.push({ role: "user", content: text });
+              appendMessage("user", text, true);
+              suggestionsEl.classList.add("hidden");
+              const typingWrap = showTyping();
+              fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  message: text,
+                  history: state.history.slice(0, -1),
+                  provider: state.provider,
+                  model: state.model || null,
+                }),
+              })
+                .then(function(res) { return res.json(); })
+                .then(function(chatData) {
+                  removeTyping(typingWrap);
+                  var response = (chatData && chatData.response) || "";
+                  state.history.push({ role: "assistant", content: response });
+                  var agentWrap = appendMessage("assistant", response, false);
+                  addAudioPlayer(agentWrap, response);
+                  playTTSForMessage(agentWrap, response);
+                })
+                .catch(function() {
+                  removeTyping(typingWrap);
+                  state.history.push({ role: "assistant", content: "Désolé, une erreur s'est produite." });
+                  appendMessage("assistant", "Désolé, une erreur s'est produite.", false);
+                });
+            })
+            .catch(function() {});
+        };
+        mr.start();
+        state.recording = true;
+        micBtn.classList.add("active");
+        micBtn.textContent = "⏹";
+        recOverlay.classList.add("visible");
+      })
+      .catch(function() {});
+  });
+
+  appendMessage("assistant", "Bonjour, je suis l’agent culturel de Monaco. Posez-moi une question sur les événements, expositions ou spectacles de la Principauté.", false);
+  populateProviders();
+  populateModels();
+  populateVoices();
+})();
+</script>
+</body>
+</html>

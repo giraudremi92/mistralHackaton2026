@@ -1,6 +1,8 @@
 openai
-gradio
 python-dotenv
 dateparser
 requests
 numpy
+fastapi
+uvicorn
+python-multipart

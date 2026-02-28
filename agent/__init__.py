@@ -1,5 +1,5 @@
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from dateparser.search import search_dates
@@ -14,16 +14,80 @@ DATE_LANGUAGES = ["fr", "en", "es", "it", "ru"]
 MAX_EVENTS_IN_FIXED_LIST = 50
 FALLBACK_MESSAGE = "Désolé, impossible de répondre pour le moment."
 
+WEEKEND_PATTERNS = (
+    "ce weekend", "ce week-end", "ce week end", "this weekend",
+)
+WEEK_PATTERNS = (
+    "cette semaine", "this week",
+)
+
+EVENT_TYPE_PATTERNS = (
+    (("concert", "concerts", "musique"), ("concert", "musique")),
+    (("cinéma", "cinema", "film", "films"), ("film", "projection", "cinema")),
+    (("expo", "exposition", "expositions"), ("exposition", "expo")),
+    (("théâtre", "theatre", "spectacle", "spectacles"), ("théâtre", "theatre", "spectacle", "pièce de théâtre")),
+    (("humour"), ("humour",)),
+)
+
+
+def _current_week_bounds(ref: date) -> tuple[date, date]:
+    weekday = ref.weekday()
+    week_start = ref - timedelta(days=weekday)
+    week_end = week_start + timedelta(days=6)
+    return (week_start, week_end)
+
+
+def _current_weekend_bounds(ref: date) -> tuple[date, date]:
+    week_start, week_end = _current_week_bounds(ref)
+    saturday = week_start + timedelta(days=5)
+    sunday = week_end
+    return (saturday, sunday)
+
+
+def _parse_relative_period(text: str, ref: date) -> tuple[date | None, date | None]:
+    lower = text.lower().strip()
+    for p in WEEKEND_PATTERNS:
+        if p in lower:
+            return _current_weekend_bounds(ref)
+    for p in WEEK_PATTERNS:
+        if p in lower:
+            return _current_week_bounds(ref)
+    return (None, None)
+
 
 def extract_date_range(text: str) -> tuple[date | None, date | None]:
     if not text or not text.strip():
         return (None, None)
+    ref = datetime.now().date()
     settings = {"RELATIVE_BASE": datetime.now()}
     results = search_dates(text, languages=DATE_LANGUAGES, settings=settings)
-    if not results:
-        return (None, None)
-    dates_found = [r[1].date() for r in results]
-    return (min(dates_found), max(dates_found))
+    if results:
+        dates_found = [r[1].date() for r in results]
+        return (min(dates_found), max(dates_found))
+    return _parse_relative_period(text, ref)
+
+
+def _detect_event_type(message: str) -> tuple[str | None, tuple[str, ...]]:
+    if not message or not message.strip():
+        return (None, ())
+    lower = message.lower()
+    for keywords, tag_matches in EVENT_TYPE_PATTERNS:
+        if any(kw in lower for kw in keywords):
+            return (keywords[0], tag_matches)
+    return (None, ())
+
+
+def filter_events_by_type(events: list[dict], message: str) -> list[dict]:
+    _, tag_matches = _detect_event_type(message)
+    if not tag_matches:
+        return events
+    out = []
+    for e in events:
+        tags = e.get("tags") or []
+        tags_lower = [str(t).lower() for t in tags]
+        if any(any(m in t or t in m for m in tag_matches) for t in tags_lower):
+            out.append(e)
+    return out
 
 
 def load_venue_markdown(dir_path: Path) -> str:
@@ -65,12 +129,13 @@ def format_events_fixed(events: list[dict], max_items: int = MAX_EVENTS_IN_FIXED
     lines = []
     for i, e in enumerate(events[:max_items], 1):
         titre = e.get("titre", "")
-        start = e.get("date_start", "")
-        end = e.get("date_end", "")
+        start = e.get("date_start", "") or ""
+        end = e.get("date_end") or e.get("date_start") or ""
+        end_str = str(end) if end else start
         lieu = e.get("lieu_nom", "")
         tarif = e.get("tarif", "") or "Prix non communiqué"
         url = e.get("url", "")
-        line = f"{i}. {titre}. Du {start} au {end}. Lieu : {lieu}. Tarif : {tarif}."
+        line = f"{i}. {titre}. Du {start} au {end_str}. Lieu : {lieu}. Tarif : {tarif}."
         if url:
             line += f" Lien : {url}."
         lines.append(line)
@@ -186,6 +251,9 @@ def respond(message: str, history: list, provider: str = "mistral", model: str |
     date_min, date_max = extract_date_range(message)
     all_events = get_all_events()
     filtered = filter_events_by_date(all_events, date_min, date_max)
+    type_label, _ = _detect_event_type(message)
+    if type_label:
+        filtered = filter_events_by_type(filtered, message)
 
     if date_min is not None or date_max is not None:
         if not filtered:
@@ -196,6 +264,8 @@ def respond(message: str, history: list, provider: str = "mistral", model: str |
                 period = f" à partir du {date_min.strftime('%d/%m/%Y')}"
             elif date_max:
                 period = f" jusqu'au {date_max.strftime('%d/%m/%Y')}"
+            if type_label:
+                return f"Aucun {type_label} trouvé pour la période{period}. Vérifiez sur le site officiel ou précisez une autre date."
             return f"Aucun événement trouvé pour la période{period}. Vérifiez sur le site officiel ou précisez une autre date."
         intro = build_fixed_intro(date_min, date_max, len(filtered))
         list_str = format_events_fixed(filtered)
