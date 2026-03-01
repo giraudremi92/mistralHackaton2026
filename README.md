@@ -28,6 +28,37 @@ User (browser)
   └── /last-scraped  → FastAPI → latest scrape timestamp from event data
 ```
 
+```mermaid
+flowchart TD
+    TXT[Text input] --> CHAT
+    MIC[Microphone] --> STT
+
+    subgraph Backend [FastAPI Backend]
+        STT["🎙️ /transcribe\nMistral Voxtral STT"]
+        CHAT["💬 /chat\nagent.respond()"]
+        TTS["🔊 /tts\nElevenLabs TTS"]
+    end
+
+    subgraph Context [System Context]
+        SP[SYSTEM_PROMPT.md]
+        MEM[MEMORY.md]
+        CD["culture_data/\nevents + venues"]
+    end
+
+    subgraph LLM [LLM Providers]
+        M[Mistral AI\ndefault]
+        V[vLLM\nself-hosted]
+        N[NVIDIA NIM\noptional]
+    end
+
+    STT -->|transcript| CHAT
+    SP & MEM & CD --> CHAT
+    CHAT --> M & V & N
+    M & V & N -->|response| CHAT
+    CHAT -->|text| UI[Chat UI]
+    CHAT -->|auto-voice| TTS -->|audio| UI
+```
+
 ### Tech Stack
 
 - **Backend**: Python, FastAPI, Uvicorn
