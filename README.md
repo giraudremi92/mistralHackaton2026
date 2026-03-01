@@ -257,11 +257,11 @@ The agent's knowledge is entirely dependent on scraped data. If a venue's websit
 
 ### Roadmap
 
-- **More venues** — add Opera de Monte-Carlo, Stade Louis II, Musée des Timbres et Monnaies, and other Monaco cultural institutions
-- **Improved parsing** — better extraction of multi-date events, ticket prices, and venue details
-- **Fully local & sovereign inference** — run the entire stack (LLM + STT + TTS) on-premise with no external API dependency, using hardware such as the NVIDIA DGX SPARK GB10
-- **Real-time data** — integrate official event APIs or RSS feeds where available to reduce scraping dependency
-- **User personalization** — remember user preferences (language, favourite venues, categories)
+- [ ] **More venues** — add Opera de Monte-Carlo, Stade Louis II, Musée des Timbres et Monnaies, and other Monaco cultural institutions
+- [ ] **Improved parsing** — better extraction of multi-date events, ticket prices, and venue details
+- [ ] **Fully local & sovereign inference** — run the entire stack (LLM + STT + TTS) on-premise with no external API dependency, using hardware such as the NVIDIA DGX SPARK GB10
+- [ ] **Real-time data** — integrate official event APIs or RSS feeds where available to reduce scraping dependency
+- [ ] **User personalization** — remember user preferences (language, favourite venues, categories)
 
 ---
 
