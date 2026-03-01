@@ -19,6 +19,18 @@
   --text-secondary:#555555;
   --border:        #1f1f1f;
 }
+body.light-mode {
+  --bg-primary:    #ffffff;
+  --bg-secondary:  #f4f4f4;
+  --bg-tertiary:   #eaeaea;
+  --text-primary:  #111111;
+  --text-secondary:#777777;
+  --border:        #d4d4d4;
+}
+body.light-mode .msg.agent li { color: #555; }
+body.light-mode .s-source { color: #888; }
+#theme-btn { background:transparent; border:1px solid var(--border); border-radius:3px; color:var(--text-secondary); font-size:14px; cursor:pointer; padding:4px 10px; transition:all 120ms; line-height:1; }
+#theme-btn:hover { border-color:var(--accent-gold); color:var(--accent-gold); }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--bg-primary);
@@ -138,6 +150,7 @@ body { z-index:1; }
   <div class="header-right">
     <div class="tagline" id="last-scraped-line">Dernière mise à jour : …</div>
     <div class="badge">Mistral Hackathon 2026</div>
+    <button type="button" id="theme-btn" title="Basculer thème clair/sombre">☀️</button>
   </div>
 </div>
 <div id="app">
@@ -235,9 +248,7 @@ body { z-index:1; }
 
   function getDomainFromUrl(url) {
     try {
-      var a = document.createElement("a");
-      a.href = url;
-      return a.hostname.replace(/^www\./, "") || url;
+      return url.replace(/^https?:\/\/(?:www\.)?/, "").split(/[/?#]/)[0] || url;
     } catch (err) { return url; }
   }
 
@@ -694,7 +705,7 @@ body { z-index:1; }
           }
         }
 
-        if (!(ttsText && ttsText.trim())) {
+        if (!(ttsText && ttsText.trim()) || !state.speakerAuto) {
           showMessage(null);
           return;
         }
@@ -864,7 +875,7 @@ body { z-index:1; }
                     } else if (ad && ttsText) playTTSForMessage(agentWrap, ttsText);
                   }
 
-                  if (!(ttsText && ttsText.trim())) {
+                  if (!(ttsText && ttsText.trim()) || !state.speakerAuto) {
                     showMessage(null);
                     return;
                   }
@@ -895,6 +906,18 @@ body { z-index:1; }
         recOverlay.classList.add("visible");
       })
       .catch(function() {});
+  });
+
+  // Theme toggle
+  const themeBtn = document.getElementById("theme-btn");
+  if (localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light-mode");
+    themeBtn.textContent = "🌙";
+  }
+  themeBtn.addEventListener("click", function() {
+    const isLight = document.body.classList.toggle("light-mode");
+    themeBtn.textContent = isLight ? "🌙" : "☀️";
+    localStorage.setItem("theme", isLight ? "light" : "dark");
   });
 
   appendMessage("assistant", "Bonjour, je suis l’agent culturel de Monaco. Posez-moi une question sur les événements, expositions ou spectacles de la Principauté.", false);

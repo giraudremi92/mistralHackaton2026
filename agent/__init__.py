@@ -26,7 +26,7 @@ EVENT_TYPE_PATTERNS = (
     (("cinéma", "cinema", "film", "films"), ("film", "projection", "cinema")),
     (("expo", "exposition", "expositions"), ("exposition", "expo")),
     (("théâtre", "theatre", "spectacle", "spectacles"), ("théâtre", "theatre", "spectacle", "pièce de théâtre")),
-    (("humour"), ("humour",)),
+    (("humour",), ("humour",)),
 )
 
 EVENT_KIND_TAGS = (
@@ -328,7 +328,8 @@ def respond(message: str, history: list, provider: str = "mistral", model: str |
     if type_label:
         filtered = filter_events_by_type(filtered, message)
 
-    if date_min is not None or date_max is not None:
+    use_fixed_response = (date_min is not None or date_max is not None) or bool(type_label and filtered)
+    if use_fixed_response:
         if not filtered:
             period = ""
             if date_min and date_max:
