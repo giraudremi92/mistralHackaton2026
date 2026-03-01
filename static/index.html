@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -146,52 +146,52 @@ body { z-index:1; }
 <div id="header">
   <div class="logo">🏎 <em>Monaco</em> Cultural Agent</div>
   <div class="sep"></div>
-  <div class="tagline" id="last-scraped-line">Dernière mise à jour : …</div>
+  <div class="tagline" id="last-scraped-line">Last updated: …</div>
   <div class="header-right">
     <div class="badge">Mistral Hackathon 2026</div>
-    <button type="button" id="theme-btn" title="Basculer thème clair/sombre">☀️</button>
+    <button type="button" id="theme-btn" title="Toggle light/dark theme">☀️</button>
   </div>
 </div>
 <div id="app">
   <div id="chat-area">
     <div id="messages"></div>
     <div id="suggestions">
-      <button type="button" class="sugg" data-sugg="Quels films voir à Monaco ce week-end ?">🎬 Quels films voir à Monaco ce week-end ?</button>
-      <button type="button" class="sugg" data-sugg="Quelles expositions en cours à Monaco ?">🖼️ Quelles expositions en cours à Monaco ?</button>
-      <button type="button" class="sugg" data-sugg="Quel est l'agenda du Grimaldi Forum ?">🎭 Quel est l'agenda du Grimaldi Forum ?</button>
-      <button type="button" class="sugg" data-sugg="Quels événements gratuits cette semaine ?">🎪 Quels événements gratuits cette semaine ?</button>
+      <button type="button" class="sugg" data-sugg="What films are showing in Monaco this weekend?">🎬 Films this weekend</button>
+      <button type="button" class="sugg" data-sugg="What exhibitions are currently on in Monaco?">🖼️ Current exhibitions</button>
+      <button type="button" class="sugg" data-sugg="What is the Grimaldi Forum schedule?">🎭 Grimaldi Forum schedule</button>
+      <button type="button" class="sugg" data-sugg="What free events are happening this week in Monaco?">🎪 Free events this week</button>
     </div>
     <div id="input-bar">
-      <button type="button" id="mic-btn" title="Enregistrement vocal">🎙</button>
-      <input type="text" id="text-input" placeholder="Posez votre question sur Monaco…" />
-      <button type="button" id="send-btn">Envoyer</button>
+      <button type="button" id="mic-btn" title="Voice recording">🎙</button>
+      <input type="text" id="text-input" placeholder="Ask your question about Monaco…" />
+      <button type="button" id="send-btn">Send</button>
     </div>
   </div>
   <div id="sidebar">
-    <div class="s-status"><div class="dot-live"></div>Agent actif</div>
+    <div class="s-status"><div class="dot-live"></div>Agent active</div>
     <div class="s-divider"></div>
     <div>
-      <div class="s-title">Modèle</div>
+      <div class="s-title">Model</div>
       <span class="s-label">Provider</span>
       <select id="provider-select" class="s-select"></select>
-      <span class="s-label">Modèle</span>
+      <span class="s-label">Model</span>
       <select id="model-select" class="s-select"></select>
     </div>
     <div class="s-divider"></div>
     <div>
-      <div class="s-title">Voix ElevenLabs</div>
+      <div class="s-title">ElevenLabs Voice</div>
       <label class="s-checkbox-row">
         <input type="checkbox" id="speaker-chk" />
-        <span>Réponse vocale auto</span>
+        <span>Auto voice response</span>
       </label>
-      <span class="s-label">Voix</span>
+      <span class="s-label">Voice</span>
       <select id="voice-select" class="s-select"></select>
     </div>
     <div class="s-divider"></div>
     <div class="s-about">
-      <span class="s-about-title">// À PROPOS</span>
-      Agent spécialisé événements culturels de la Principauté de Monaco. Domaine d'expertise : événements culturels, expositions, spectacles, théâtre, cinéma, musée, opéra, jardin exotique, etc.<br><br>
-      <span style="color:#333;font-size:10px;font-family:'JetBrains Mono',monospace">Sources :</span><br>
+      <span class="s-about-title">// ABOUT</span>
+      Specialized agent for cultural events in the Principality of Monaco. Areas of expertise: cultural events, exhibitions, shows, theatre, cinema, museums, opera, exotic garden, etc.<br><br>
+      <span style="color:#333;font-size:10px;font-family:'JetBrains Mono',monospace">Sources:</span><br>
       <span class="s-source">culture.mc</span><br>
       <span class="s-source">mairie.mc</span><br>
       <span class="s-source">visitmonaco.com</span><br>
@@ -199,7 +199,7 @@ body { z-index:1; }
     </div>
   </div>
 </div>
-<div id="rec-overlay"><div class="rec-dot"></div>Enregistrement en cours… Cliquez ⏹ pour envoyer</div>
+<div id="rec-overlay"><div class="rec-dot"></div>Recording in progress… Click ⏹ to send</div>
 <div id="transcription-toast"><span class="toast-label">// Voxtral</span><span id="toast-text"></span></div>
 <script>
 (function() {
@@ -284,11 +284,11 @@ body { z-index:1; }
   function parseEventLine(line) {
     line = line.replace(/\s+/g, " ").trim();
     var title = "", date = "", lieu = "", tarif = "", url = "";
-    var lieuM = line.match(/\bLieu\s*:\s*([^.]*?)(?=\.\s*(?:Tarif|Lien|Horaires)|\.\s*$|$)/i);
-    var tarifM = line.match(/\bTarif\s*:\s*([^.]*?)(?=\.\s*Lien|\.\s*$|$)/i);
-    if (!tarifM && /Gratuit/i.test(line)) tarifM = [null, (line.match(/Gratuit[^.]*\.?/) || [])[0] || "Gratuit"];
-    var lienM = line.match(/\bLien\s*:\s*(\S+)/i);
-    var duM = line.match(/Du\s+(.+?)\s+au\s+([^.]*?)(?=\.|$)/i);
+    var lieuM = line.match(/\b(?:Lieu|Venue)\s*:\s*([^.]*?)(?=\.\s*(?:Tarif|Price|Lien|Link|Horaires|Schedule)|\.\s*$|$)/i);
+    var tarifM = line.match(/\b(?:Tarif|Price)\s*:\s*([^.]*?)(?=\.\s*(?:Lien|Link)|\.\s*$|$)/i);
+    if (!tarifM && /(?:Gratuit|Free)/i.test(line)) tarifM = [null, (line.match(/(?:Gratuit|Free)[^.]*\.?/) || [])[0] || "Free"];
+    var lienM = line.match(/\b(?:Lien|Link)\s*:\s*(\S+)/i);
+    var duM = line.match(/(?:Du|From)\s+(.+?)\s+(?:au|to)\s+([^.]*?)(?=\.|$)/i);
     if (lieuM) lieu = lieuM[1].trim();
     if (tarifM) tarif = tarifM[1].trim();
     if (lienM) {
@@ -301,29 +301,30 @@ body { z-index:1; }
     if (duM) date = (duM[1].trim() + " – " + duM[2].trim()).replace(/\s*\.\s*$/, "");
     var beforeLieu = lieuM ? line.substring(0, line.indexOf(lieuM[0])).trim() : line;
     title = beforeLieu.split(". ")[0].trim();
-    if (duM && title.length > beforeLieu.indexOf("Du ") && beforeLieu.indexOf("Du ") >= 0) {
-      var avantDu = beforeLieu.substring(0, beforeLieu.indexOf("Du ")).trim();
+    var duIdx = Math.max(beforeLieu.indexOf("Du "), beforeLieu.indexOf("From "));
+    if (duM && duIdx >= 0 && title.length > duIdx) {
+      var avantDu = beforeLieu.substring(0, duIdx).trim();
       if (avantDu) title = avantDu.replace(/\s*\.\s*$/, "");
     }
     if (!title) title = beforeLieu.split(". ")[0] || beforeLieu;
-    return { title: title, date: date, lieu: lieu, tarif: tarif || "Prix non communiqué", url: url };
+    return { title: title, date: date, lieu: lieu, tarif: tarif || "Price not available", url: url };
   }
 
   function looksLikeEventList(intro, firstItem) {
     if (!firstItem || !intro) return false;
     var lower = (intro + " " + firstItem).toLowerCase();
-    if (lower.indexOf("lieu") >= 0 || lower.indexOf("du ") >= 0) return true;
-    if (/^\d+\.\s*.{10,}/.test(firstItem) && (firstItem.indexOf("Lieu") >= 0 || firstItem.indexOf("Tarif") >= 0)) return true;
+    if (lower.indexOf("lieu") >= 0 || lower.indexOf("venue") >= 0 || lower.indexOf("du ") >= 0 || lower.indexOf("from ") >= 0) return true;
+    if (/^\d+\.\s*.{10,}/.test(firstItem) && (firstItem.indexOf("Lieu") >= 0 || firstItem.indexOf("Venue") >= 0 || firstItem.indexOf("Tarif") >= 0 || firstItem.indexOf("Price") >= 0)) return true;
     return false;
   }
 
   function eventEmojiFromIntro(intro) {
     var i = (intro || "").toLowerCase();
     if (i.indexOf("concert") >= 0) return "🎵";
-    if (i.indexOf("exposition") >= 0 || i.indexOf("expo") >= 0) return "🖼️";
-    if (i.indexOf("humour") >= 0) return "🎤";
-    if (i.indexOf("atelier") >= 0) return "📚";
-    if (i.indexOf("théâtre") >= 0 || i.indexOf("spectacle") >= 0) return "🎭";
+    if (i.indexOf("exposition") >= 0 || i.indexOf("exhibition") >= 0 || i.indexOf("expo") >= 0) return "🖼️";
+    if (i.indexOf("humour") >= 0 || i.indexOf("comedy") >= 0) return "🎤";
+    if (i.indexOf("atelier") >= 0 || i.indexOf("workshop") >= 0) return "📚";
+    if (i.indexOf("théâtre") >= 0 || i.indexOf("theatre") >= 0 || i.indexOf("theater") >= 0 || i.indexOf("spectacle") >= 0 || i.indexOf("show") >= 0) return "🎭";
     return "🖼️";
   }
 
@@ -376,7 +377,7 @@ body { z-index:1; }
           listHtml += '<span class="event-title">' + emoji + " " + escapeHtml(p.title) + "</span>";
           listHtml += '<div class="event-meta">';
           listHtml += (p.date ? "📅 " + escapeHtml(p.date) + " . " : "") + "📍 " + escapeHtml(p.lieu);
-          if (p.tarif && p.tarif !== "Prix non communiqué") listHtml += " . 🎟️ " + escapeHtml(p.tarif);
+          if (p.tarif && p.tarif !== "Price not available") listHtml += " . 🎟️ " + escapeHtml(p.tarif);
           listHtml += "</div>";
           if (p.url) listHtml += '<a class="event-link" href="' + escapeHtml(p.url) + '" target="_blank" rel="noopener">' + escapeHtml(getDomainFromUrl(p.url)) + " →</a>";
           listHtml += "</li>";
@@ -402,7 +403,7 @@ body { z-index:1; }
     const isUser = role === "user";
     const label = document.createElement("div");
     label.className = "msg-label " + (isUser ? "user-label" : "agent-label");
-    label.textContent = isUser ? (isVocal ? "VOUS · 🎙 VOCAL" : "VOUS") : "AGENT";
+    label.textContent = isUser ? (isVocal ? "YOU · 🎙 VOICE" : "YOU") : "AGENT";
     const msg = document.createElement("div");
     msg.className = "msg " + (isUser ? "user" : "agent");
     if (!isUser && events && events.length > 0) {
@@ -431,7 +432,7 @@ body { z-index:1; }
     return "default";
   }
 
-  var MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  var MOIS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   function formatDateShort(startStr, endStr) {
     if (!startStr) return "";
     var d = startStr.split("-");
@@ -458,8 +459,8 @@ body { z-index:1; }
       var description = (e.description || "").trim();
       var kind = eventKindFromTags(e.tags);
       var tarif = e.tarif ? (e.tarif + "").trim() : "";
-      if (!tarif && e.gratuit) tarif = "Entrée libre";
-      if (!tarif) tarif = "Prix non communiqué";
+      if (!tarif && e.gratuit) tarif = "Free admission";
+      if (!tarif) tarif = "Price not available";
       var linkUrl = (e.url != null && e.url !== "") ? String(e.url).trim() : "";
       if (!linkUrl && e.source) linkUrl = (e.source != null && e.source !== "") ? String(e.source).trim() : "";
       var domain = linkUrl ? getDomainFromUrl(linkUrl) : "";
@@ -475,16 +476,16 @@ body { z-index:1; }
         var metaParts = [];
         if (heure || (description && (description.indexOf("h") >= 0 || description.indexOf(":") >= 0))) {
           if (description && description.length < 80) metaParts.push("🕐 " + escapeHtml(description));
-          else if (heure) metaParts.push("🕐 À partir de " + escapeHtml(heure));
+          else if (heure) metaParts.push("🕐 From " + escapeHtml(heure));
         }
         metaParts.push("🗓️ " + escapeHtml(start + (end && end !== start ? "–" + end : "")));
         metaParts.push("📍 " + escapeHtml(lieu));
-        if (tarif !== "Prix non communiqué") metaParts.push("💰 " + escapeHtml(tarif));
+        if (tarif !== "Price not available") metaParts.push("💰 " + escapeHtml(tarif));
         metaHtml = metaParts.join(" • ");
       } else {
         var dateLabel = formatDateShort(start, end);
         metaHtml = "📅 " + escapeHtml(dateLabel) + " . 📍 " + escapeHtml(lieu);
-        if (tarif !== "Prix non communiqué") metaHtml += " . 🎟️ " + escapeHtml(tarif);
+        if (tarif !== "Price not available") metaHtml += " . 🎟️ " + escapeHtml(tarif);
       }
       html += '<li class="event-item">';
       html += '<span class="event-title">' + emoji + " " + escapeHtml(titre) + "</span>";
@@ -537,7 +538,7 @@ body { z-index:1; }
     playBtn.type = "button";
     playBtn.className = "play-btn";
     playBtn.innerHTML = "▶";
-    playBtn.title = "Écouter";
+    playBtn.title = "Listen";
     var barWrap = document.createElement("div");
     barWrap.className = "audio-bar";
     var progress = document.createElement("div");
@@ -648,7 +649,7 @@ body { z-index:1; }
   function showTyping() {
     var wrap = document.createElement("div");
     wrap.className = "msg-wrap typing-wrap";
-    wrap.innerHTML = '<div class="typing-indicator"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="typing-label">Agent recherche…</span></div>';
+    wrap.innerHTML = '<div class="typing-indicator"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="typing-label">Agent searching…</span></div>';
     messagesEl.appendChild(wrap);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return wrap;
@@ -722,8 +723,8 @@ body { z-index:1; }
       })
       .catch(function() {
         removeTyping(typingWrap);
-        state.history.push({ role: "assistant", content: "Désolé, une erreur s'est produite." });
-        appendMessage("assistant", "Désolé, une erreur s'est produite.", false);
+        state.history.push({ role: "assistant", content: "Sorry, an error occurred." });
+        appendMessage("assistant", "Sorry, an error occurred.", false);
       });
   }
 
@@ -759,7 +760,7 @@ body { z-index:1; }
         voiceSelect.innerHTML = "";
         const defOpt = document.createElement("option");
         defOpt.value = "";
-        defOpt.textContent = "Par défaut";
+        defOpt.textContent = "Default";
         voiceSelect.appendChild(defOpt);
         (voices || []).forEach(function(v) {
           const opt = document.createElement("option");
@@ -892,8 +893,8 @@ body { z-index:1; }
                 })
                 .catch(function() {
                   removeTyping(typingWrap);
-                  state.history.push({ role: "assistant", content: "Désolé, une erreur s'est produite." });
-                  appendMessage("assistant", "Désolé, une erreur s'est produite.", false);
+                  state.history.push({ role: "assistant", content: "Sorry, an error occurred." });
+                  appendMessage("assistant", "Sorry, an error occurred.", false);
                 });
             })
             .catch(function() {});
@@ -919,13 +920,13 @@ body { z-index:1; }
     localStorage.setItem("theme", isLight ? "light" : "dark");
   });
 
-  appendMessage("assistant", "Bonjour, je suis l’agent culturel de Monaco. Posez-moi une question sur les événements, expositions ou spectacles de la Principauté.", false);
+  appendMessage("assistant", "Hello, I am the Monaco Cultural Agent. Ask me about events, exhibitions, or shows in the Principality.", false);  
   populateProviders();
   populateModels();
   populateVoices();
   fetch("/last-scraped").then(function(r) { return r.json(); }).then(function(d) {
     var el = document.getElementById("last-scraped-line");
-    if (el && d && d.last_scraped_at) el.textContent = "Dernière mise à jour : " + d.last_scraped_at;
+    if (el && d && d.last_scraped_at) el.textContent = "Last updated: " + d.last_scraped_at;
   }).catch(function() {});
 })();
 </script>
