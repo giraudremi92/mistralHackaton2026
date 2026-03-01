@@ -11,7 +11,6 @@ CONTEXT_FILES = [ROOT / "SYSTEM_PROMPT.md", ROOT / "MEMORY.md"]
 CULTURE_DATA_DIR = ROOT / "culture_data"
 CATEGORIES_FILE = CULTURE_DATA_DIR / "categories.json"
 DATE_LANGUAGES = ["fr", "en", "es", "it", "ru"]
-MAX_EVENTS_IN_FIXED_LIST = 50
 FALLBACK_MESSAGE = "Désolé, impossible de répondre pour le moment."
 
 WEEKEND_PATTERNS = (
@@ -20,24 +19,6 @@ WEEKEND_PATTERNS = (
 WEEK_PATTERNS = (
     "cette semaine", "this week",
 )
-
-EVENT_TYPE_PATTERNS = (
-    (("concert", "concerts", "musique"), ("concert", "musique")),
-    (("cinéma", "cinema", "film", "films"), ("film", "projection", "cinema")),
-    (("expo", "exposition", "expositions"), ("exposition", "expo")),
-    (("théâtre", "theatre", "spectacle", "spectacles"), ("théâtre", "theatre", "spectacle", "pièce de théâtre")),
-    (("humour",), ("humour",)),
-)
-
-EVENT_KIND_TAGS = (
-    ("film", ("film", "projection", "cinéma", "cinema")),
-    ("exposition", ("exposition", "expo")),
-    ("humour", ("humour",)),
-    ("concert", ("concert", "musique")),
-    ("atelier", ("atelier", "ateliers")),
-    ("théâtre", ("théâtre", "theatre", "spectacle", "pièce de théâtre", "jeune public", "classique")),
-)
-
 
 def _current_week_bounds(ref: date) -> tuple[date, date]:
     weekday = ref.weekday()
@@ -76,45 +57,6 @@ def extract_date_range(text: str) -> tuple[date | None, date | None]:
     return _parse_relative_period(text, ref)
 
 
-def _detect_event_type(message: str) -> tuple[str | None, tuple[str, ...]]:
-    if not message or not message.strip():
-        return (None, ())
-    lower = message.lower()
-    for keywords, tag_matches in EVENT_TYPE_PATTERNS:
-        if any(kw in lower for kw in keywords):
-            return (keywords[0], tag_matches)
-    return (None, ())
-
-
-def filter_events_by_type(events: list[dict], message: str) -> list[dict]:
-    _, tag_matches = _detect_event_type(message)
-    if not tag_matches:
-        return events
-    out = []
-    for e in events:
-        tags = e.get("tags") or []
-        tags_lower = [str(t).lower() for t in tags]
-        if any(any(m in t or t in m for m in tag_matches) for t in tags_lower):
-            out.append(e)
-    return out
-
-
-def _infer_events_kind(events: list[dict]) -> str:
-    if not events:
-        return "default"
-    tag_counts: dict[str, int] = {}
-    for e in events:
-        tags = e.get("tags") or []
-        tags_lower = [str(t).lower() for t in tags]
-        for kind, keywords in EVENT_KIND_TAGS:
-            if any(any(kw in t or t in kw for kw in keywords) for t in tags_lower):
-                tag_counts[kind] = tag_counts.get(kind, 0) + 1
-                break
-    if not tag_counts:
-        return "default"
-    return max(tag_counts, key=tag_counts.get)
-
-
 def load_venue_markdown(dir_path: Path) -> str:
     parts = []
     for p in sorted(dir_path.glob("*.md")):
@@ -148,78 +90,6 @@ def format_events_summary(events: list[dict]) -> str:
             line += f" | {url}"
         lines.append(line)
     return "\n".join(lines)
-
-
-def _event_detail_by_kind(e: dict, kind: str) -> str:
-    lieu = e.get("lieu_nom", "")
-    start = e.get("date_start", "") or ""
-    end = e.get("date_end") or e.get("date_start") or ""
-    end_str = str(end) if end else start
-    heure_debut = e.get("heure_debut", "")
-    description = (e.get("description") or "").strip()
-    if kind == "film" and (heure_debut or description):
-        if description and ("h" in description or ":" in description):
-            return f"Séances : {description}. Lieu : {lieu}."
-        if heure_debut:
-            return f"À partir de {heure_debut}. Lieu : {lieu}."
-    if kind == "exposition" and start and end_str and start != end_str:
-        return f"Du {start} au {end_str}. Lieu : {lieu}."
-    if heure_debut and kind in ("théâtre", "concert", "humour", "atelier"):
-        return f"Le {start}. À {heure_debut}. Lieu : {lieu}."
-    if start and end_str:
-        return f"Du {start} au {end_str}. Lieu : {lieu}."
-    if start:
-        return f"Le {start}. Lieu : {lieu}."
-    return f"Lieu : {lieu}."
-
-
-def format_events_fixed(
-    events: list[dict],
-    max_items: int = MAX_EVENTS_IN_FIXED_LIST,
-    kind: str = "default",
-) -> str:
-    lines = []
-    for i, e in enumerate(events[:max_items], 1):
-        titre = e.get("titre", "")
-        lieu = e.get("lieu_nom", "")
-        tarif = e.get("tarif", "") or "Prix non communiqué"
-        if e.get("gratuit") and not e.get("tarif"):
-            tarif = "Entrée libre"
-        url = e.get("url", "")
-        detail = _event_detail_by_kind(e, kind)
-        line = f"{i}. {titre}. {detail} Tarif : {tarif}."
-        if url:
-            line += f" Lien : {url}."
-        lines.append(line)
-    return "\n\n".join(lines)
-
-
-_INTRO_BY_KIND = {
-    "film": "Voici les films à Monaco {period}. {count} film(s).",
-    "exposition": "Voici les expositions à Monaco {period}. {count} exposition(s).",
-    "théâtre": "Voici les spectacles et pièces de théâtre à Monaco {period}. {count} spectacle(s).",
-    "concert": "Voici les concerts à Monaco {period}. {count} concert(s).",
-    "humour": "Voici les spectacles d'humour à Monaco {period}. {count} spectacle(s).",
-    "atelier": "Voici les ateliers et animations à Monaco {period}. {count} atelier(s).",
-}
-
-
-def build_fixed_intro(
-    date_min: date | None,
-    date_max: date | None,
-    count: int,
-    kind: str = "default",
-) -> str:
-    if date_min and date_max:
-        period = f"du {date_min.strftime('%d/%m/%Y')} au {date_max.strftime('%d/%m/%Y')}"
-    elif date_min:
-        period = f"à partir du {date_min.strftime('%d/%m/%Y')}"
-    elif date_max:
-        period = f"jusqu'au {date_max.strftime('%d/%m/%Y')}"
-    else:
-        period = "disponibles"
-    template = _INTRO_BY_KIND.get(kind) or "Événements à Monaco {period}. {count} résultat(s)."
-    return template.format(period=period, count=count)
 
 
 def get_last_scraped_at() -> str:
@@ -321,42 +191,6 @@ def load_context(user_message: str | None = None) -> str:
 
 
 def respond(message: str, history: list, provider: str = "mistral", model: str | None = None) -> str | dict:
-    date_min, date_max = extract_date_range(message)
-    all_events = get_all_events()
-    filtered = filter_events_by_date(all_events, date_min, date_max)
-    type_label, _ = _detect_event_type(message)
-    if type_label:
-        filtered = filter_events_by_type(filtered, message)
-
-    use_fixed_response = (date_min is not None or date_max is not None) or bool(type_label and filtered)
-    if use_fixed_response:
-        if not filtered:
-            period = ""
-            if date_min and date_max:
-                period = f" du {date_min.strftime('%d/%m/%Y')} au {date_max.strftime('%d/%m/%Y')}"
-            elif date_min:
-                period = f" à partir du {date_min.strftime('%d/%m/%Y')}"
-            elif date_max:
-                period = f" jusqu'au {date_max.strftime('%d/%m/%Y')}"
-            if type_label:
-                return f"Aucun {type_label} trouvé pour la période{period}. Vérifiez sur le site officiel ou précisez une autre date."
-            return f"Aucun événement trouvé pour la période{period}. Vérifiez sur le site officiel ou précisez une autre date."
-        _msg_kind = {"cinéma": "film", "expo": "exposition"}.get(type_label or "", type_label)
-        kind = _msg_kind or _infer_events_kind(filtered)
-        intro = build_fixed_intro(date_min, date_max, len(filtered), kind=kind)
-        list_str = format_events_fixed(filtered, kind=kind)
-        extra = len(filtered) - MAX_EVENTS_IN_FIXED_LIST
-        if extra > 0:
-            list_str += f"\n\n{extra} autre(s) événement(s) disponible(s). Précisez la date ou le type pour affiner."
-        displayed = filtered[:MAX_EVENTS_IN_FIXED_LIST]
-        titres = [e.get("titre", "").strip() for e in displayed if e.get("titre")]
-        tts_text = intro + " " + ", ".join(titres) if titres else intro
-        return {
-            "response": intro + "\n\n" + list_str,
-            "tts_text": tts_text,
-            "events": displayed,
-        }
-
     messages = [{"role": "system", "content": load_context(message)}]
     for msg in history:
         if isinstance(msg, dict):
