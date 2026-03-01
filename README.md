@@ -180,8 +180,53 @@ The `.md` and `.json` files in `culture_data/` are gitignored as they are genera
 
 ## Scraper
 
-<!-- TODO: This section should be completed by the scraper developer. -->
-<!-- Describe: how to run the scraper, what sources it targets, output format, scheduling, etc. -->
+The scraper populates `culture_data/` with structured event data. It runs independently from the main app.
+
+### Pipeline
+
+```
+sources.json → fetch.py → extract.py → store.py
+(venue config)  (Linkup/Tavily)  (Mistral Large)  (JSON upsert)
+```
+
+1. **Fetch** — fetches URLs directly via Linkup (JS rendering) or searches the web via Tavily
+2. **Extract** — sends raw content to Mistral Large, which returns structured JSON events
+3. **Store** — upserts events into `culture_data/events_<venue_id>.json` (no duplicates)
+
+### Usage
+
+```bash
+python3 scraper/run.py                          # all venues
+python3 scraper/run.py --venue cinema_monaco    # single venue
+python3 scraper/run.py --dry-run                # extract without saving
+python3 scraper/run.py --debug --venue grimaldi_forum  # print raw fetched content
+```
+
+### Venues
+
+| Venue | Method | Store mode |
+|-------|--------|------------|
+| Musée Océanographique | Tavily search + URL | UPSERT |
+| Grimaldi Forum | Tavily search only | UPSERT |
+| Cinémas de Monaco | Linkup direct fetch | REPLACE (weekly) |
+| Médiathèque de Monaco | Linkup direct fetch | UPSERT |
+| Théâtre des Muses | Linkup direct fetch | UPSERT + PRUNE (season 2025-2026) |
+| Théâtre Princesse Grace | Linkup direct fetch | UPSERT + PRUNE (season 2025-2026) |
+
+**Store modes:**
+- **UPSERT** — adds new events, preserves existing ones (deduplication by `venue_id + title + date_start`)
+- **REPLACE** — replaces all events on each run (e.g. cinema weekly schedule)
+- **PRUNE** — automatically removes past events for seasonal venues
+
+### Scheduling
+
+Recommended: daily cron at 3:00 AM.
+
+```cron
+0 3 * * * cd /path/to/mistralHackaton2026 && python3 scraper/run.py >> logs/scraper.log 2>&1
+```
+
+See [`scraper/README.md`](scraper/README.md) for full configuration reference.
 
 ## LLM Providers
 
@@ -196,6 +241,36 @@ The agent supports multiple LLM providers, switchable from the UI sidebar:
 
 All providers use the OpenAI-compatible chat completions API.
 
+## Limitations & Future Work
+
+### Current Limitations
+
+The agent's knowledge is entirely dependent on scraped data. If a venue's website changes structure, blocks crawlers, or publishes events late, the data may be incomplete or outdated. The scraper must be re-run manually (or via cron) to stay current — there is no real-time event feed.
+
+### Roadmap
+
+- **More venues** — add Opera de Monte-Carlo, Stade Louis II, Musée des Timbres et Monnaies, and other Monaco cultural institutions
+- **Improved parsing** — better extraction of multi-date events, ticket prices, and venue details
+- **Fully local & sovereign inference** — run the entire stack (LLM + STT + TTS) on-premise with no external API dependency, using hardware such as the NVIDIA DGX SPARK GB10
+- **Real-time data** — integrate official event APIs or RSS feeds where available to reduce scraping dependency
+- **User personalization** — remember user preferences (language, favourite venues, categories)
+
+---
+
+## Partners & APIs
+
+This project was built during the **Mistral AI Hackathon 2026** and relies on the following technologies and services:
+
+| Partner | Usage |
+|---------|-------|
+| [**Mistral AI**](https://mistral.ai) | LLM chat (Ministral, Mistral Large), speech-to-text (Voxtral), and event extraction in the scraper |
+| [**ElevenLabs**](https://elevenlabs.io) | Text-to-speech voice synthesis (`eleven_multilingual_v2`) |
+| [**Linkup**](https://linkup.so) | JS-capable web fetching for dynamic venue websites |
+| [**Tavily**](https://tavily.com) | Web search and static URL content extraction |
+| [**NVIDIA**](https://www.nvidia.com) | NIM API for cloud inference + DGX SPARK GB10 for local sovereign inference |
+
+---
+
 ## License
 
-Hackathon project — Mistral AI Hackathon 2026.
+MIT License — see [LICENSE](LICENSE) for details.
