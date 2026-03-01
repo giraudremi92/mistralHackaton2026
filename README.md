@@ -2,9 +2,15 @@
 
 > **Mistral Hackathon 2026** — A conversational AI agent specialized in cultural events and venues in the Principality of Monaco.
 
+## Demo
+
+[![Demo video](https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
 ## Overview
 
 Monaco Cultural Agent is a full-stack web application that lets users ask questions about cultural events, exhibitions, shows, cinema, theatre, museums, and more in Monaco. The agent answers using real scraped data, supports voice input (speech-to-text via Mistral Voxtral), voice output (text-to-speech via ElevenLabs), and multiple LLM providers.
+
+Designed with **sovereignty and privacy in mind**: the entire stack can run fully on-premise — LLM inference, STT, and data — with no dependency on external cloud APIs, using local hardware such as the NVIDIA DGX SPARK GB10. It is also ready to plug into official data sources (open data feeds, institutional APIs) to replace scraping entirely and guarantee data freshness.
 
 ### Key Features
 
@@ -13,7 +19,9 @@ Monaco Cultural Agent is a full-stack web application that lets users ask questi
 - **Voice input** — record a question via microphone, transcribed by Mistral Voxtral STT.
 - **Voice output** — every agent response can be played aloud via ElevenLabs TTS, with an embedded audio player.
 - **Date-aware filtering** — understands relative periods ("this weekend", "next week") and absolute dates to show only relevant events.
-- **Multiple LLM providers** — switch between Mistral, vLLM (self-hosted), and NVIDIA from the sidebar.
+- **Multiple LLM providers** — switch between Mistral AI, NVIDIA NIM, or a fully local model via LM Studio — from the sidebar.
+- **Local & sovereign inference** — run the full stack on-premise (tested on NVIDIA DGX SPARK GB10) with no external API dependency.
+- **Official source ready** — architecture supports direct integration of open data APIs or institutional feeds to replace scraping.
 - **Dark / Light theme** toggle.
 
 ## Architecture
