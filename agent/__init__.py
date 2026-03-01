@@ -13,8 +13,12 @@ LANGUAGE_NAMES = {
     "it": "Italian",
     "ru": "Russian",
     "es": "Spanish",
-    "de": "German",
+    "nl": "Dutch",
 }
+
+FRENCH_ACCENTS = "éèêëàâäùûüîïôöç"
+FRENCH_WORD_MARKERS = ("ce ", "cette ", " les ", " des ", " pour ", " dans ", " avec ", " une ", " que ", " est ", " sont ", " week-end", " semaine", " films ", " film ", " concert", " expos")
+CONFUSABLE_WITH_FRENCH = ("de", "nl")
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTEXT_FILES = [ROOT / "SYSTEM_PROMPT.md", ROOT / "MEMORY.md"]
@@ -186,6 +190,13 @@ def load_culture_context(date_min: date | None = None, date_max: date | None = N
     return "\n\n".join(parts) if parts else ""
 
 
+def _has_french_markers(text: str) -> bool:
+    lower = text.lower()
+    if any(c in lower for c in FRENCH_ACCENTS):
+        return True
+    return any(m in lower for m in FRENCH_WORD_MARKERS)
+
+
 def _detect_reply_language(user_message: str | None) -> str | None:
     if not (user_message or user_message.strip()):
         return None
@@ -194,6 +205,10 @@ def _detect_reply_language(user_message: str | None) -> str | None:
         return None
     try:
         code = detect(text)
+        if code == "de":
+            code = "fr"
+        if code in CONFUSABLE_WITH_FRENCH and _has_french_markers(text):
+            code = "fr"
         return LANGUAGE_NAMES.get(code, code)
     except LangDetectException:
         return None
