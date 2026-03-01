@@ -206,9 +206,10 @@ body { z-index:1; }
   const MODELS = {
     "mistral": ["ministral-8b-latest", "mistral-large-latest", "mistral-small-latest"],
     "vllm": [],
-    "nvidia": ["meta/llama-3.1-70b-instruct", "mistralai/mistral-large"],
+    "nvidia": ["mistralai/ministral-14b-instruct-2512", "mistralai/mistral-large-3-675b-instruct-2512"],
+    "lmstudio": ["mistralai/ministral-14b-instruct-2512"],
   };
-  const PROVIDERS = ["mistral", "vllm", "nvidia"];
+  const PROVIDERS = ["mistral", "nvidia", "lmstudio"];
 
   const state = {
     history: [],

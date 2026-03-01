@@ -185,13 +185,14 @@ The `.md` and `.json` files in `culture_data/` are gitignored as they are genera
 
 ## LLM Providers
 
-The agent supports three LLM providers, switchable from the UI sidebar:
+The agent supports multiple LLM providers, switchable from the UI sidebar:
 
-| Provider | Models | Notes |
-|----------|--------|-------|
-| **Mistral** | `ministral-8b-latest`, `mistral-large-latest`, `mistral-small-latest` | Default provider. Uses Mistral AI API. |
-| **vLLM** | Configurable via `.env` | For self-hosted models. |
-| **NVIDIA** | `meta/llama-3.1-70b-instruct`, `mistralai/mistral-large` | Uses NVIDIA NIM API. |
+| Provider | Models | Status | Notes |
+|----------|--------|--------|-------|
+| **Mistral** | `ministral-8b-latest`, `mistral-large-latest`, `mistral-small-latest` | ✅ Tested | Default provider. Uses Mistral AI API. |
+| **NVIDIA NIM** | `mistralai/ministral-14b-instruct-2512`, `mistralai/mistral-large-3-675b-instruct-2512` | ✅ Tested | Uses NVIDIA NIM API. |
+| **LM Studio** | Configurable via `.env` | ✅ Tested | Local inference via LM Studio. Tested on **NVIDIA DGX SPARK GB10** for sovereign, on-premise inference. |
+| **vLLM** | Configurable via `.env` | 🚧 In progress | Self-hosted vLLM endpoint. |
 
 All providers use the OpenAI-compatible chat completions API.
 

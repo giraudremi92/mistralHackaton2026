@@ -1,7 +1,6 @@
 import os
-
-from dotenv import load_dotenv
 from openai import OpenAI
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -19,7 +18,12 @@ PROVIDERS = {
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
         "api_key": os.getenv("NVIDIA_API_KEY", ""),
-        "default_model": "meta/llama-3.1-70b-instruct",
+        "default_model": os.getenv("NVIDIA_MODEL", "mistralai/ministral-14b-instruct-2512"),
+    },
+    "lmstudio": {
+        "base_url": os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"),
+        "api_key": "lm-studio",
+        "default_model": os.getenv("LMSTUDIO_MODEL", "ministral-3-14b-instruct-2512"),
     },
 }
 
