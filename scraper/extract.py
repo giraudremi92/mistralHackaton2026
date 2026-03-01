@@ -41,8 +41,8 @@ def fix_season_years(events: list[dict], season: str) -> list[dict]:
             except ValueError:
                 pass
         # Recompute id to reflect corrected date_start
-        if event.get("date_start") and event.get("venue_id") and event.get("titre"):
-            slug = re.sub(r"[^a-z0-9]+", "-", event["titre"].lower()).strip("-")
+        if event.get("date_start") and event.get("venue_id") and event.get("title"):
+            slug = re.sub(r"[^a-z0-9]+", "-", event["title"].lower()).strip("-")
             event["id"] = f"{event['venue_id']}_{slug}_{event['date_start']}"
 
     return events
@@ -102,20 +102,20 @@ NE PAS extraire : offres promotionnelles, réductions, podcasts, articles de blo
 
 Retourne UNIQUEMENT un tableau JSON valide (pas de texte avant ou après) :
 {{
-  "id": "{venue['venue_id']}_<slug-titre>_<date_start>",
+  "id": "{venue['venue_id']}_<slug-title>_<date_start>",
   "venue_id": "{venue['venue_id']}",
   "venue_name": "{venue['venue_name']}",
-  "titre": "string",
+  "title": "string",
   "description": "string",
   "date_start": "YYYY-MM-DD",
   "date_end": "YYYY-MM-DD ou null",
   "always_current": false,
-  "heure_debut": "HH:MM ou null",
-  "heure_fin": "HH:MM ou null",
+  "start_time": "HH:MM ou null",
+  "end_time": "HH:MM ou null",
   "tags": ["string"],
-  "tarif": "string ou null",
-  "tarif_value": 0,
-  "gratuit": false,
+  "price": "string ou null",
+  "price_value": 0,
+  "free": false,
   "url": "string ou null",
   "image_url": "string ou null",
   "source": "{venue['urls'][0] if venue.get('urls') else ''}",
@@ -126,7 +126,7 @@ Règles :
 - Utilise le titre en FRANÇAIS si disponible. Ne traduis jamais un titre depuis une autre langue.
 - tarif_value = prix entier minimum en euros (0 si gratuit)
 - gratuit = true si tarif_value == 0
-- id = venue_id + "_" + slug titre en minuscules avec tirets + "_" + date_start
+- id = venue_id + "_" + slug title en minuscules avec tirets + "_" + date_start
 - Si aucun événement valide trouvé, retourne []
 
 Contenu brut :

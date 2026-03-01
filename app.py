@@ -1,12 +1,13 @@
 import gradio as gr
 from agent import respond
 
-PROVIDERS = ["mistral", "vllm", "nvidia"]
+PROVIDERS = ["mistral", "vllm", "nvidia", "lmstudio"]
 
 MODELS = {
     "mistral": ["ministral-8b-latest", "mistral-large-latest", "mistral-small-latest"],
     "vllm": [],
-    "nvidia": ["meta/llama-3.1-70b-instruct", "mistralai/mistral-large"],
+    "nvidia": ["mistralai/ministral-14b-instruct-2512"],
+    "lmstudio": ["ministral-3-14b-instruct-2512"],
 }
 
 
@@ -25,7 +26,7 @@ with gr.Blocks(title="NanoAgent") as demo:
     model_dd = gr.Dropdown(MODELS["mistral"], value="ministral-8b-latest", label="Model")
 
     provider_dd.change(
-        fn=lambda p: gr.Dropdown(choices=MODELS.get(p, []), value=(MODELS.get(p, [""])[0])),
+        fn=lambda p: gr.Dropdown(choices=MODELS.get(p, []), value=(MODELS.get(p) or [None])[0]),
         inputs=provider_dd,
         outputs=model_dd,
     )

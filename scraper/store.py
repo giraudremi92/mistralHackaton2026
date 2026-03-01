@@ -37,7 +37,7 @@ def _normalize(text: str) -> str:
 
 def _event_key(event: dict) -> tuple:
     """Unique key for an event: (venue_id, titre_normalized, date_start)."""
-    return (event.get("venue_id", ""), _normalize(event.get("titre", "")), event.get("date_start", ""))
+    return (event.get("venue_id", ""), _normalize(event.get("title", "")), event.get("date_start", ""))
 
 
 def load_existing(filepath: str) -> list[dict]:

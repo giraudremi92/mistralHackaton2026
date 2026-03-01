@@ -141,15 +141,15 @@ def load_events(date_range: tuple[date, date] | None) -> str:
 
     lines = ["## Événements disponibles\n"]
     for e in filtered:
-        lines.append(f"### {e['titre']} ({e['venue_name']})")
+        lines.append(f"### {e['title']} ({e.get('venue_name', '')})")
         if e.get("always_current"):
             lines.append(f"- Disponibilité : À l'affiche en ce moment")
         else:
             lines.append(f"- Date : {e['date_start']} → {e['date_end']}")
-            if e.get("heure_debut"):
-                lines.append(f"- Horaires : {e['heure_debut']} – {e.get('heure_fin', '')}")
-        if e.get("tarif"):
-            lines.append(f"- Tarif : {e['tarif']}")
+            if e.get("start_time"):
+                lines.append(f"- Horaires : {e['start_time']} – {e.get('end_time', '')}")
+        if e.get("price"):
+            lines.append(f"- Tarif : {e['price']}")
         if e.get("url"):
             lines.append(f"- Lien : {e['url']}")
         if e.get("description"):
