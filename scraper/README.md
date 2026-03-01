@@ -75,7 +75,7 @@ Each venue is a JSON object. All fields:
 |-------|------|----------|-------------|
 | `venue_id` | string | ✅ | Unique identifier (slug) |
 | `venue_name` | string | ✅ | Display name |
-| `search_queries` | string[] | ✅ | Tavily search queries |
+| `search_queries` | string[] | ✅ | Tavily search queries (can be `[]` for Linkup-only venues) |
 | `urls` | string[] | ✅ | Direct URLs to fetch (can be `[]`) |
 | `events_file` | string | ✅ | Output JSON path |
 | `md_file` | string | ✅ | Venue info markdown path |
@@ -110,7 +110,7 @@ Each venue is a JSON object. All fields:
 | Provider | JS Rendering | Notes |
 |----------|-------------|-------|
 | `tavily` | No | Fast, good for static sites and search queries |
-| `linkup` | Yes | Required for SPA/dynamic sites (médiathèque, théâtre des Muses) |
+| `linkup` | Yes | Preferred for JS-heavy or dynamic sites. Fetches URLs directly — no search queries needed. |
 | `auto` | Yes if Linkup available | Falls back to Tavily if `LINKUP_API_KEY` not set |
 
 Set per venue with `"fetch_provider": "linkup"` in `sources.json`.
@@ -149,10 +149,10 @@ python3 scraper/run.py --venue musee_oceano
 |----|-------|--------|-------|
 | `musee_oceano` | Musée Océanographique | Tavily search + URL | Standard UPSERT |
 | `grimaldi_forum` | Grimaldi Forum | Tavily search only | Site blocks direct fetch |
-| `cinema_monaco` | Cinémas de Monaco | Tavily + Linkup | REPLACE weekly; showtimes vary by day |
-| `mediatheque_monaco` | Médiathèque de Monaco | Linkup (render_js) | SPA calendar |
-| `theatre_muses` | Théâtre des Muses | Linkup (render_js) | Season 2025-2026; was 403 for basic fetch |
-| `theatre_princesse_grace` | Théâtre Princesse Grace | Tavily + URL | Season 2025-2026 |
+| `cinema_monaco` | Cinémas de Monaco | Linkup only | REPLACE weekly; showtimes vary by day |
+| `mediatheque_monaco` | Médiathèque de Monaco | Linkup only | SPA calendar |
+| `theatre_muses` | Théâtre des Muses | Linkup only | Season 2025-2026 |
+| `theatre_princesse_grace` | Théâtre Princesse Grace | Linkup only | Season 2025-2026 |
 
 ---
 

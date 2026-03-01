@@ -66,7 +66,7 @@ def extract_events(raw_content: str, venue: dict) -> list[dict]:
 - date_end = null (pas de date de fin, la disponibilité est gérée par le système)
 - Ajoute le champ "always_current": true dans chaque événement
 - Ne pas chercher à deviner des dates futures précises
-- Pour heure_debut : si plusieurs séances existent, indique la première séance de la journée (format HH:MM)
+- Pour start_time : si plusieurs séances existent, indique la première séance de la journée (format HH:MM)
 - Pour la description : inclus les horaires de toutes les séances et la salle (ex: "Salle 1 : 14h00, 16h15 | Salle 2 : 20h50")"""
         year_filter = f"de {target_year}"
     elif season:
@@ -124,8 +124,8 @@ Retourne UNIQUEMENT un tableau JSON valide (pas de texte avant ou après) :
 
 Règles :
 - Utilise le titre en FRANÇAIS si disponible. Ne traduis jamais un titre depuis une autre langue.
-- tarif_value = prix entier minimum en euros (0 si gratuit)
-- gratuit = true si tarif_value == 0
+- price_value = prix entier minimum en euros (0 si gratuit)
+- free = true si price_value == 0
 - id = venue_id + "_" + slug title en minuscules avec tirets + "_" + date_start
 - Si aucun événement valide trouvé, retourne []
 
