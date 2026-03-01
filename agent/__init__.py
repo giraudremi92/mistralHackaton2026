@@ -88,12 +88,12 @@ def load_events_json(file_path: Path) -> list[dict]:
 def format_events_summary(events: list[dict]) -> str:
     lines = []
     for e in events:
-        titre = e.get("titre", "")
-        lieu = e.get("lieu_nom", "")
+        titre = e.get("title", "")
+        lieu = e.get("venue_name", "")
         start = e.get("date_start", "")
         end = e.get("date_end", "")
-        heures = f"{e.get('heure_debut', '')}-{e.get('heure_fin', '')}" if e.get("heure_debut") else ""
-        tarif = e.get("tarif", "")
+        heures = f"{e.get('start_time', '')}-{e.get('end_time', '')}" if e.get("start_time") else ""
+        tarif = e.get("price", "")
         url = e.get("url", "")
         line = f"- {titre} | {lieu} | {start} → {end} {heures} | {tarif}"
         if url:
