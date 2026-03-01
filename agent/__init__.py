@@ -3,8 +3,18 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from dateparser.search import search_dates
+from langdetect import detect, LangDetectException
 
 from agent.providers import chat
+
+LANGUAGE_NAMES = {
+    "en": "English",
+    "fr": "French",
+    "it": "Italian",
+    "ru": "Russian",
+    "es": "Spanish",
+    "de": "German",
+}
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTEXT_FILES = [ROOT / "SYSTEM_PROMPT.md", ROOT / "MEMORY.md"]
@@ -176,8 +186,28 @@ def load_culture_context(date_min: date | None = None, date_max: date | None = N
     return "\n\n".join(parts) if parts else ""
 
 
+def _detect_reply_language(user_message: str | None) -> str | None:
+    if not (user_message or user_message.strip()):
+        return None
+    text = user_message.strip()[:500]
+    if len(text) < 10:
+        return None
+    try:
+        code = detect(text)
+        return LANGUAGE_NAMES.get(code, code)
+    except LangDetectException:
+        return None
+
+
 def load_context(user_message: str | None = None) -> str:
+    lang_name = _detect_reply_language(user_message)
     parts = []
+    if lang_name:
+        parts.append(
+            f"# CRITICAL – Language\n\n"
+            f"The user wrote in {lang_name}. You MUST reply entirely in {lang_name}. "
+            f"Do not use French or any other language. Every sentence of your answer must be in {lang_name}."
+        )
     for p in CONTEXT_FILES:
         if p.exists():
             parts.append(f"# {p.name}\n{p.read_text(encoding='utf-8')}")
@@ -186,6 +216,8 @@ def load_context(user_message: str | None = None) -> str:
     culture = load_culture_context(date_min=date_min, date_max=date_max)
     if culture:
         base += "\n\n# Culture data\n\n" + culture
+    if lang_name:
+        base += f"\n\n# Reminder: reply only in {lang_name}. Do not use French unless the user wrote in French."
     base = base.replace("{last_scraped_at}", get_last_scraped_at())
     return base
 

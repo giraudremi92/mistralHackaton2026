@@ -1,6 +1,7 @@
 openai
 python-dotenv
 dateparser
+langdetect
 requests
 numpy
 fastapi
