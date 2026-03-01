@@ -6,7 +6,7 @@
 
 ## Demo
 
-[![Demo video](https://img.youtube.com/vi/VpWigKgBrOs/maxresdefault.jpg)](https://youtu.be/VpWigKgBrOs)
+[![▶️ Demo video](https://drive.google.com/thumbnail?id=19tuGZnlkjQOKZXzMPuKirml9GdGAbmlD&sz=w1280)](https://drive.google.com/file/d/19tuGZnlkjQOKZXzMPuKirml9GdGAbmlD/view)
 
 ## Overview
 
@@ -150,6 +150,8 @@ python main.py
 ```
 
 The app runs on `http://localhost:7860`.
+
+> **⚠️ Microphone & voice (Chrome)** — Chrome only grants microphone access on **secure contexts**. Always open the app via **`http://localhost:7860`** (not `http://192.168.x.x:7860` or any raw IP). If you access the app by IP address, Chrome will silently block the microphone and the voice input/output buttons will not work.
 
 ## API Endpoints
 
