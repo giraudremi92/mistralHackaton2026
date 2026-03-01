@@ -1,4 +1,4 @@
-# Monaco Cultural Agent
+# 🇲🇨 Monaco Cultural Agent
 
 > **Mistral Hackathon 2026** — A conversational AI agent specialized in cultural events and venues in the Principality of Monaco.
 
