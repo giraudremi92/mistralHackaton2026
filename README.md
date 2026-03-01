@@ -6,7 +6,7 @@
 
 ## Demo
 
-[![Demo video](https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+[![Demo video](https://img.youtube.com/vi/VpWigKgBrOs/maxresdefault.jpg)](https://youtu.be/VpWigKgBrOs)
 
 ## Overview
 
