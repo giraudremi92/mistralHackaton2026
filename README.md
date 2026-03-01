@@ -2,6 +2,8 @@
 
 > **Mistral Hackathon 2026** — A conversational AI agent specialized in cultural events and venues in the Principality of Monaco.
 
+> ⚠️ **Disclaimer** — This is a **proof of concept** built for the Mistral AI Hackathon 2026. It has **no official affiliation** with the Government of Monaco, the Mairie de Monaco, or any Monaco institution. Event data is sourced from publicly available websites and may be incomplete or outdated. Use for informational purposes only.
+
 ## Demo
 
 [![Demo video](https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
